@@ -27,7 +27,7 @@ public class CacheFileHandler {
 		rollbackLog.copyPageFrom(channel, page.getPageID(), PAGE_SIZE);
 		
 		buffer.clear();
-		if (!page.fill(buffer)) return;
+		page.fill(buffer);
 		buffer.flip();
 		
 		if (PAGE_SIZE != channel.write(buffer, page.getPageID() * PAGE_SIZE))
@@ -59,12 +59,20 @@ public class CacheFileHandler {
 		return new Page(pageID, buffer, PAGE_SIZE);
 	}
 	
+	public void truncateTo(int numPages) throws IOException {
+		channel.truncate(numPages * PAGE_SIZE);
+	}
+	
 	public void rollback(int pageSize) throws Exception {
 		rollbackLog.rollback(channel, pageSize);
 	}
 	
 	public void commit() throws Exception {
 		rollbackLog.commit();
+	}
+	
+	public int pageCount() throws IOException {
+		return (int) (channel.size() / PAGE_SIZE);
 	}
 	
 	

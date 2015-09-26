@@ -9,7 +9,6 @@ public class Page {
 	
 	private final int pageID;
 	
-	private Boolean dirty;
 	private byte[] data;
 	
 	public Page(int pageID, ByteBuffer initialData, int pageSize) {
@@ -17,7 +16,6 @@ public class Page {
 		PAGE_SIZE = pageSize;
 		
 		data = new byte[PAGE_SIZE];
-		dirty = false;
 	
 		initialData.get(data);
 	}
@@ -25,29 +23,17 @@ public class Page {
 	/**
 	 * Fills the buffer with the contents of its internal byte array. Does not modify any parameters on the buffer.
 	 * @param buffer The ByteBuffer to fill.
-	 * @return True if the buffer contains information to write back, false otherwise.
-	 */
-	public boolean fill(ByteBuffer buffer) {
-		if (!dirty) return false;
+	*/
+	public void fill(ByteBuffer buffer) {
 		buffer.put(data);
-		return true;
 	}
 	
 	public void writeData(byte[] array, int index, int pageOffset, int byteCount) {
 		System.arraycopy(array, index, data, pageOffset, byteCount);
-		setDirty();
 	}
 	
 	public void readData(byte[] array, int index, int pageOffset, int byteCount) {
 		System.arraycopy(data, pageOffset, array, index, byteCount);
-	}
-
-	private void setDirty() {
-		dirty = true;
-	}
-	
-	public void clearDirty() {
-		dirty = false;
 	}
 	
 	public int size() {
