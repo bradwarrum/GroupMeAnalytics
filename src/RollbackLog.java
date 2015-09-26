@@ -34,6 +34,7 @@ public class RollbackLog {
 			int lower = upper - (pageSize + 4);
 			int pageID = readInt(lower);
 			toChannel.position(pageSize * pageID);
+			channel.position(lower + 4);
 			if (pageSize != toChannel.transferFrom(channel, lower + 4, pageSize)) throw new Exception();
 			upper = lower;
 		}
@@ -42,7 +43,9 @@ public class RollbackLog {
 	public void copyPageFrom(FileChannel fromChannel, int pageID, int pageSize) throws Exception {
 		writeInt(pageID, (int)channel.size());
 		channel.position(channel.size());
-		if (pageSize != channel.transferFrom(fromChannel, pageID * pageSize, pageSize)) throw new Exception();
+		fromChannel.position(pageID * pageSize);
+		int transferred = (int) channel.transferFrom(fromChannel, pageID * pageSize, pageSize);
+		if (pageSize != transferred) throw new Exception();
 
 		//Fence to ensure we have written to the rollback before we attempt to write the main file
 		channel.force(false);

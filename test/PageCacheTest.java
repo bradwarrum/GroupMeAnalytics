@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class PageCacheTest {
-	@Test
+	//@Test
 	public void initialPageCreation() throws Exception {
 		PageCache pageCache = new PageCache("./testMain", "./testRollback", 100, 1024, 32);
 		if (pageCache.numPages() == 0) {
@@ -30,7 +30,8 @@ public class PageCacheTest {
 	@Test
 	public void freqCacheWrapper() throws Exception {
 		FrequencyCacheWrapper wrapper = new FrequencyCacheWrapper("./fcwMain", "./fcwRollback");
-		
+		wrapper.mapWord("literallythelongestwordinthehistoryoftheworldbrooooooooooohhhhhhhhhhhhhhhhhhhhkalsdjjjjjjjjjjflaskdfj;lajsdf;lasjdf;lajsd;lfajsd;lfja;sdlfja;dsfj;adf");
+		wrapper.commit();
 	}
 
 }

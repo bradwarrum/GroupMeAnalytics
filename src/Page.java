@@ -32,8 +32,16 @@ public class Page {
 		System.arraycopy(array, index, data, pageOffset, byteCount);
 	}
 	
+	public void writeData(byte data, int index) {
+		this.data[index] = data;
+	}
+	
 	public void readData(byte[] array, int index, int pageOffset, int byteCount) {
 		System.arraycopy(data, pageOffset, array, index, byteCount);
+	}
+	
+	public byte readData(int index) {
+		return this.data[index];
 	}
 	
 	public int size() {

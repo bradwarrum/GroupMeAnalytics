@@ -72,7 +72,7 @@ public class PageCache implements OnWriteEventHandler {
 
 	public PageEntry entryAt(int pageID, int entryIndex) throws Exception {
 		PageReference p = bring(pageID);
-		return new PageEntry(this, p,entryIndex * ENTRY_SIZE ,ENTRY_SIZE);
+		return new PageEntry(this, p,entryIndex ,ENTRY_SIZE);
 	}
 	
 	public int createPage() throws Exception {
@@ -81,6 +81,7 @@ public class PageCache implements OnWriteEventHandler {
 		int pageID = p.getPageID();
 		pageCache.put(pageID, new PageReference(p));
 		markerMap[numMarkers++] = pageID;
+		if (pageID > maxFetchedPage) maxFetchedPage = pageID;
 		return pageID;
 	}
 	
