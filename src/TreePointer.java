@@ -1,15 +1,17 @@
 
 public class TreePointer {
-	private final static int ENTRIES_PER_PAGE = FrequencyCacheWrapper.ENTRIES_PER_PAGE;
+	private final int ENTRIES_PER_PAGE;
 	private final int value;
-	public static int convert(int pageID, int entryIndex) {
-		return pageID * ENTRIES_PER_PAGE + entryIndex;
+	public static int convert(int pageID, int entryIndex, int entriesPerPage) {
+		return pageID * entriesPerPage + entryIndex;
 	}
-	public TreePointer(int rawValue) {
+	public TreePointer(int rawValue, int entriesPerPage) {
+		ENTRIES_PER_PAGE = entriesPerPage;
 		value = rawValue;
 	}
 
-	public TreePointer(int pageID, int entry) {
+	public TreePointer(int pageID, int entry, int entriesPerPage) {
+		ENTRIES_PER_PAGE = entriesPerPage;
 		value = pageID * ENTRIES_PER_PAGE + entry;
 	}
 

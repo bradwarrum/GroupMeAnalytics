@@ -1,6 +1,6 @@
 import java.nio.ByteBuffer;
 
-public class FrequencyEntry implements AutoCloseable {
+public class WordTreeEntry implements AutoCloseable {
 
 	private PageEntry backingEntry;
 	private static final int VALUE_IND = 0;
@@ -10,7 +10,7 @@ public class FrequencyEntry implements AutoCloseable {
 	private static final int FIRST_FREQ_IND = PARENT_IND + Integer.BYTES;
 	public static final int ENTRY_SIZE = FIRST_FREQ_IND + Integer.BYTES;
 	private static ByteBuffer intbuffer = ByteBuffer.allocate(ENTRY_SIZE);
-	public FrequencyEntry(PageEntry backingEntry) {
+	public WordTreeEntry(PageEntry backingEntry) {
 		this.backingEntry = backingEntry;
 	}
 	
@@ -35,7 +35,7 @@ public class FrequencyEntry implements AutoCloseable {
 	}
 	
 	public TreePointer next() {
-		return new TreePointer(getInt(NEXT_IND));
+		return new TreePointer(getInt(NEXT_IND), WordTree.ENTRIES_PER_PAGE);
 	}
 	
 	public void next(int pointer) {
@@ -47,7 +47,7 @@ public class FrequencyEntry implements AutoCloseable {
 	}
 	
 	public TreePointer child() {
-		return new TreePointer(getInt(CHILD_IND));
+		return new TreePointer(getInt(CHILD_IND), WordTree.ENTRIES_PER_PAGE);
 	}
 	
 	public void child(int pointer) {
@@ -59,7 +59,7 @@ public class FrequencyEntry implements AutoCloseable {
 	}
 	
 	public TreePointer parent() {
-		return new TreePointer(getInt(PARENT_IND));
+		return new TreePointer(getInt(PARENT_IND), WordTree.ENTRIES_PER_PAGE);
 	}
 	
 	public void parent(int pointer) {
@@ -89,7 +89,7 @@ public class FrequencyEntry implements AutoCloseable {
 	}
 	
 	public TreePointer self() {
-		return new TreePointer(backingEntry.pageID(), backingEntry.entryIndex());
+		return new TreePointer(backingEntry.pageID(), backingEntry.entryIndex(), WordTree.ENTRIES_PER_PAGE);
 	}
 	
 }

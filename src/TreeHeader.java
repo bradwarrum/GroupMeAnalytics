@@ -2,17 +2,18 @@ import java.io.Closeable;
 import java.nio.ByteBuffer;
 
 @SuppressWarnings("unused")
-public class FrequencyHeaderEntry implements AutoCloseable {
+public class TreeHeader implements AutoCloseable {
 	private PageEntry backingEntry;
 	private static final ByteBuffer intbuffer = ByteBuffer.allocate(Integer.BYTES * 3);
 	private static final int PAGE_COUNT_IND = 0;
 	private static final int FP_ENTRY_COUNT_IND = PAGE_COUNT_IND + Integer.BYTES;
 	private static final int FIRST_ENTRY_IND = FP_ENTRY_COUNT_IND + Integer.BYTES;
+	private static final int MIN_ENTRY_SIZE = FIRST_ENTRY_IND + Integer.BYTES;
 	
 	private int cachedPageCount = -1;
 	private int cachedEntryCount = -1;
 
-	public FrequencyHeaderEntry(PageEntry rawEntry) {
+	public TreeHeader(PageEntry rawEntry) {
 		backingEntry = rawEntry;
 	}
 	public int pageCount() {
