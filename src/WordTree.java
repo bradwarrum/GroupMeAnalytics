@@ -109,4 +109,12 @@ public class WordTree extends Tree {
 		wte.firstFrequency(externalPointerVal.rawValue());
 		wte.close();
 	}
+	
+	public TreePointer getExternalPointer(TreePointer entry) throws Exception {
+		WordTreeEntry wte = getWordTreeEntry(entry);
+		int intptr = wte.firstFrequency();
+		TreePointer pointer = (intptr == 0) ? null : new TreePointer(wte.firstFrequency(), ENTRIES_PER_PAGE);
+		wte.close();
+		return pointer;
+	}
 }

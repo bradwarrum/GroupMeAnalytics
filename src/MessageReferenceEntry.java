@@ -3,7 +3,7 @@ import java.nio.ByteBuffer;
 public class MessageReferenceEntry implements AutoCloseable {
 	private PageEntry backingEntry;
 	private static final int MESSAGE_ID_IND = 0;
-	private static final int NEXT_IND = MESSAGE_ID_IND + Byte.BYTES;
+	private static final int NEXT_IND = MESSAGE_ID_IND + Integer.BYTES;
 	private static final int TRAILING_IND = NEXT_IND + Integer.BYTES;
 	public static final int MIN_ENTRY_SIZE = TRAILING_IND + Integer.BYTES;
 	private static ByteBuffer intbuffer = ByteBuffer.allocate(MIN_ENTRY_SIZE);

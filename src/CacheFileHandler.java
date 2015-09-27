@@ -24,7 +24,7 @@ public class CacheFileHandler {
 	public void writePage(Page page) throws Exception {
 		if (PAGE_SIZE != page.size()) 							throw new IllegalArgumentException("Page size does not match for writeback");
 		if (page.getPageID() * PAGE_SIZE > channel.size())		throw new IllegalArgumentException("Page ID is out of range");
-		rollbackLog.copyPageFrom(channel, page.getPageID(), PAGE_SIZE);
+		rollbackLog.copyPageFrom(channel, page.getPageID());
 		
 		buffer.clear();
 		page.fill(buffer);
@@ -64,7 +64,7 @@ public class CacheFileHandler {
 	}
 	
 	public void rollback(int pageSize) throws Exception {
-		rollbackLog.rollback(channel, pageSize);
+		rollbackLog.rollback(channel);
 	}
 	
 	public void commit() throws Exception {

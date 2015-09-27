@@ -24,7 +24,7 @@ public class PageCache implements OnWriteEventHandler {
 
 
 	public PageCache(String mainFile, String rollbackFile, int maxCachedPage, int pageSize, int entrySize) throws IOException {
-		cacheFile = new CacheFileHandler(mainFile, new RollbackLog(rollbackFile), pageSize);
+		cacheFile = new CacheFileHandler(mainFile, new RollbackLog(rollbackFile, pageSize), pageSize);
 		this.MAX_CACHED_PAGES = maxCachedPage;
 		this.PAGE_SIZE = pageSize;
 		this.ENTRY_SIZE = entrySize;

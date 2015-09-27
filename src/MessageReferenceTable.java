@@ -9,4 +9,37 @@ public class MessageReferenceTable extends Tree {
 		super(mainFile, rollbackFile, MAX_CACHED_PAGES, PAGE_SIZE, ENTRY_SIZE);
 	}
 	
+	private MessageReferenceEntry getReferenceEntry(TreePointer pointer) throws Exception {
+		PageEntry pe = getEntry(pointer);
+		return (pe == null) ? null : new MessageReferenceEntry(pe);
+	}
+	
+	private MessageReferenceEntry addReferenceEntry() throws Exception {
+		PageEntry pe = addEntry();
+		return (pe == null) ? null : new MessageReferenceEntry(pe);
+	}
+	
+	public TreePointer pushMessageReference(int messageID, TreePointer currentHead) throws Exception {
+		MessageReferenceEntry newHead = addReferenceEntry();
+		newHead.messageID(messageID);
+		newHead.next(currentHead);
+		TreePointer headPtr = newHead.self();
+		newHead.close();
+		return headPtr;
+	}
+	
+	public void setTrailingReference(TreePointer forEntry, TreePointer externalRef) throws Exception {
+		if (forEntry == null || forEntry.rawValue() == 0) throw new IllegalArgumentException("Pointer cannot be null");
+		MessageReferenceEntry entry = getReferenceEntry(forEntry);
+		entry.trailingWord(externalRef);
+		entry.close();
+	}
+	
+	public TreePointer getTrailingReference(TreePointer forEntry) throws Exception {
+		if (forEntry == null || forEntry.rawValue() == 0) throw new IllegalArgumentException("Pointer cannot be null");
+		MessageReferenceEntry entry = getReferenceEntry(forEntry);
+		TreePointer ptr = entry.trailingWord();
+		entry.close();
+		return ptr;
+	}
 }

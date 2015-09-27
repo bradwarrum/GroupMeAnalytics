@@ -35,7 +35,8 @@ public class TreeHeader implements AutoCloseable {
 		if (cachedEntryCount > 0) return cachedEntryCount;
 		intbuffer.clear();
 		backingEntry.readData(intbuffer.array(), FP_ENTRY_COUNT_IND, Integer.BYTES);
-		return intbuffer.getInt();
+		cachedEntryCount = intbuffer.getInt();
+		return cachedEntryCount;
 	}
 
 	public void finalPageEntryCount(int newEntryCount) {
@@ -68,11 +69,13 @@ public class TreeHeader implements AutoCloseable {
 	}
 	
 	public int incrementPageCount() {
+		pageCount();
 		pageCount(cachedPageCount + 1);
 		return cachedPageCount;
 	}
 	
 	public int incrementFinalPageEntryCount() {
+		finalPageEntryCount();
 		finalPageEntryCount(cachedEntryCount + 1);
 		return cachedEntryCount;
 	}

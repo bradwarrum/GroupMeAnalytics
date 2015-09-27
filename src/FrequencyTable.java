@@ -33,6 +33,7 @@ public class FrequencyTable extends Tree {
 			} 
 			if (last != null) last.close();
 			last = entry;
+			entry = getFrequencyEntry(entry.next());
 		}
 		entry = addFrequencyEntry();
 		entry.count(1);
@@ -46,7 +47,7 @@ public class FrequencyTable extends Tree {
 	}
 	
 	public int getCount(byte memberID, TreePointer firstFrequency) throws Exception {
-		if (firstFrequency == null) throw new IllegalArgumentException("Pointer must not be null");
+		if (firstFrequency == null || firstFrequency.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
 		FrequencyTableEntry entry = getFrequencyEntry(firstFrequency);
 		while (entry != null) {
 			if (entry.memberID() == memberID) {
@@ -62,7 +63,7 @@ public class FrequencyTable extends Tree {
 	}
 	
 	public int getTotalCount(TreePointer firstFrequency) throws Exception {
-		if (firstFrequency == null) throw new IllegalArgumentException("Pointer must not be null");
+		if (firstFrequency == null || firstFrequency.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
 		FrequencyTableEntry entry = getFrequencyEntry(firstFrequency);
 		int totalCount = 0;
 		while (entry != null) {
@@ -75,14 +76,14 @@ public class FrequencyTable extends Tree {
 	}
 	
 	public void setExternalPointer(TreePointer pointer, TreePointer externalPointer) throws Exception {
-		if (pointer == null) throw new IllegalArgumentException("Pointer must not be null");
+		if (pointer == null || pointer.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
 		FrequencyTableEntry entry = getFrequencyEntry(pointer);
 		entry.pointer(externalPointer);
 		entry.close();
 	}
 	
 	public TreePointer getExternalPointer(TreePointer pointer) throws Exception {
-		if (pointer == null) throw new IllegalArgumentException("Pointer must not be null");
+		if (pointer == null || pointer.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
 		FrequencyTableEntry entry = getFrequencyEntry(pointer);
 		TreePointer returnVal = entry.pointer();
 		entry.close();

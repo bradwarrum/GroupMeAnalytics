@@ -60,6 +60,6 @@ public class FrequencyTableEntry implements AutoCloseable{
 	}
 	
 	public TreePointer self() {
-		return new TreePointer(backingEntry.pageID(), backingEntry.pageID(), FrequencyTable.ENTRIES_PER_PAGE);
+		return new TreePointer(backingEntry.pageID(), backingEntry.entryIndex(), FrequencyTable.ENTRIES_PER_PAGE);
 	}
 }

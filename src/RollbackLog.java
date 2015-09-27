@@ -6,47 +6,47 @@ import java.nio.file.StandardOpenOption;
 
 public class RollbackLog {
 	private final FileChannel channel;
+	private final int PAGE_SIZE;
 	private final ByteBuffer buffer;
 
-	public RollbackLog(String filePath) throws IOException {
+	public RollbackLog(String filePath, int pageSize) throws IOException {
 		channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
-		this.buffer = ByteBuffer.allocate(Integer.BYTES);
+		PAGE_SIZE = pageSize;
+		this.buffer = ByteBuffer.allocate(pageSize + 4);
 	}
 
-	private int readInt(int position) throws Exception {
-		buffer.clear();
-		if (Integer.BYTES != channel.read(buffer, position)) throw new Exception();
-		buffer.flip();
-		return buffer.getInt();
-	}
-
-	private void writeInt(int value, int position) throws Exception {
-		buffer.clear();
-		buffer.putInt(value).flip();
-		if (Integer.BYTES != channel.write(buffer, position)) throw new Exception();
-	}
-
-	public void rollback(FileChannel toChannel, int pageSize) throws Exception {
+	public void rollback(FileChannel toChannel) throws Exception {
 		int size = (int)channel.size();
-		int extraBytes = size % (pageSize + 4);
+		int extraBytes = size % (PAGE_SIZE + 4);
 		int upper = size - extraBytes;
 		while (upper > 0) {
-			int lower = upper - (pageSize + 4);
-			int pageID = readInt(lower);
-			toChannel.position(pageSize * pageID);
-			channel.position(lower + 4);
-			if (pageSize != toChannel.transferFrom(channel, lower + 4, pageSize)) throw new Exception();
+			int lower = upper - (PAGE_SIZE + 4);
+			
+			buffer.clear();
+			channel.position(lower);
+			int transferred = channel.read(buffer);
+			if (transferred != PAGE_SIZE + 4) throw new Exception();
+			buffer.flip();
+			int pageID = buffer.getInt();
+			buffer.position(0);
+			toChannel.position(PAGE_SIZE * pageID);
+			transferred = toChannel.write(buffer);
+			if (transferred != PAGE_SIZE + 4) throw new Exception();
 			upper = lower;
 		}
+		toChannel.force(false);
 	}
 
-	public void copyPageFrom(FileChannel fromChannel, int pageID, int pageSize) throws Exception {
-		writeInt(pageID, (int)channel.size());
+	public void copyPageFrom(FileChannel fromChannel, int pageID) throws Exception {
+		buffer.clear();
+		buffer.putInt(pageID);
+		fromChannel.position(pageID * PAGE_SIZE);
+		int transferred = fromChannel.read(buffer);
+		if (transferred != PAGE_SIZE) throw new Exception();
+		buffer.flip();
 		channel.position(channel.size());
-		fromChannel.position(pageID * pageSize);
-		int transferred = (int) channel.transferFrom(fromChannel, pageID * pageSize, pageSize);
-		if (pageSize != transferred) throw new Exception();
-
+		transferred = channel.write(buffer);
+		if (transferred != PAGE_SIZE + 4) throw new Exception();
 		//Fence to ensure we have written to the rollback before we attempt to write the main file
 		channel.force(false);
 	}
