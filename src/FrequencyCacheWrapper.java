@@ -43,7 +43,7 @@ public class FrequencyCacheWrapper {
 	
 	public FrequencyEntry getEntry(int pageID, int entryIndex) throws Exception {
 		if (pageID == 0 && entryIndex == 0) return null;
-		if (pageID < header.pageCount() && entryIndex < header.finalPageEntryCount()) {
+		if (pageID < header.pageCount() || (pageID == header.pageCount() && entryIndex < header.finalPageEntryCount())) {
 			return new FrequencyEntry(pageCache.entryAt(pageID, entryIndex));
 		}
 		throw new IllegalArgumentException("Entry does not exist in the tree");
@@ -59,9 +59,10 @@ public class FrequencyCacheWrapper {
 	 * @throws Exception 
 	 * @returns The pointer to the first element of the frequency table, or -1 if the word was not previously mapped in the tree
 	 */
-	public int mapWord(String word) throws Exception {
+	public int mapWord(String word, int insertionPointer) throws Exception {
+		if (!word.matches("[a-zA-z\']+")) return -1;
 		byte[] letters = word.toLowerCase().getBytes(Charset.forName("US-ASCII"));
-		
+		boolean previouslyMapped = true;
 		// Get root node
 		TreePointer firstEntry 	= new TreePointer(header.firstEntry());
 		FrequencyEntry parent  	= null;
@@ -71,25 +72,65 @@ public class FrequencyCacheWrapper {
 		for (int i = 0; i < letters.length; i++) {
 			byte b = letters[i];
 			if (current == null) {
-				FrequencyEntry insert = addEntry();
-				insert.value(b);
-				if (parent == null) {
-					insert.parent(0);
-					header.firstEntry(insert.self().rawValue());
-				} else {
-					insert.parent(parent.self());
-					parent.child(insert.self());
+				previouslyMapped = false;
+				current = addEntry();
+				current.value(b);
+				if (prev != null) {prev.next(current.self()); prev.close(); }
+				if (parent != null && prev == null) {parent.child(current.self());}
+				if (parent != null) { current.parent(parent.self()); parent.close(); }
+				else if (prev == null) {
+					header.firstEntry(current.self().rawValue());
 				}
-			    insert.next(0);
-			    insert.child(0);
-			    if (parent != null) parent.close();
-			    parent = insert;
-			    prev = null;
+				parent = current;
+				current = null;
+				prev = null;
+			} else {
+				if (current.value() == b) {
+					if (parent != null) {parent.close(); }
+					if (prev != null) {prev.close();}
+					parent = current;
+					current = getEntry(current.child());
+					prev = null;
+				} else if (current.value() < b) {
+					if (prev != null) {prev.close();}
+					prev = current;					
+					current = getEntry(current.next());
+					i--;
+				} else {
+					previouslyMapped = false;
+					FrequencyEntry insert = addEntry();
+					insert.value(b);
+					if (parent != null) {
+						insert.parent(parent.self());
+						if (prev == null) parent.child(insert.self());
+						parent.close();
+					} else {
+						if (prev == null) 
+							header.firstEntry(insert.self().rawValue());
+					}
+					if (prev != null) {
+						prev.next(insert.self());
+						prev.close();
+					}
+					insert.next(current.self());
+					parent = insert;
+					if (current != null) current.close();
+					current = null;
+					prev = null;
+				}
 			}
 		}
-		if (parent != null) parent.close();
-		if (current != null) current.close();
-		if (prev != null) prev.close();
+		int returnVal;
+		if (!previouslyMapped) {
+			parent.firstFrequency(insertionPointer);
+			returnVal = insertionPointer;
+		} else {
+			returnVal = parent.firstFrequency();
+		}
+		parent.close();
+		if (current != null) {current.close();}
+		//Prev must be null
+		if (prev != null) throw new AssertionError("How is previous null here?");
 		return -1;
 		
 		

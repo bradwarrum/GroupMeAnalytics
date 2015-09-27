@@ -83,6 +83,11 @@ public class FrequencyEntry implements AutoCloseable {
 		backingEntry.close();
 	}
 	
+	@Override
+	public String toString() {
+		return String.valueOf((char)value()) + " @ (" + String.valueOf(backingEntry.pageID()) + ", " + String.valueOf(backingEntry.entryIndex()) + ") NEXT: " + next().toString() + ", CHILD: " + child().toString() + ", PARENT: " + parent().toString();
+	}
+	
 	public TreePointer self() {
 		return new TreePointer(backingEntry.pageID(), backingEntry.entryIndex());
 	}
