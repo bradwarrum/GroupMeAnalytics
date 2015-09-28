@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Random;
 
 public class PageCache implements OnWriteEventHandler {
-	private static Random rand = new Random();
+	private static Random rand = new Random(123);
 
 	private final int MAX_CACHED_PAGES;
 	private final int PAGE_SIZE;
@@ -30,24 +30,27 @@ public class PageCache implements OnWriteEventHandler {
 
 	private void evict() throws Exception {
 		if (numMarkers != MAX_CACHED_PAGES) return;
-		int marker = rand.nextInt(numMarkers);
+		int markerInd = rand.nextInt(numMarkers);
+		
 		int count = 0;
 		while (count < MAX_CACHED_PAGES) {
-			PageReference pageRef = pageCache.get(marker);
+			int pageID = markerMap[markerInd];
+			PageReference pageRef = pageCache.get(pageID);
 			if (!pageRef.isReferenced()) {
 				Page page = pageRef.getPage();
 				pageRef.invalidate();
 				
-				pageCache.remove(marker);
+				pageCache.remove(pageID);
 				if (dirtyPages.remove(page.getPageID())) cacheFile.writePage(page);
 				
-				if (marker != --numMarkers) {
-					markerMap[marker] = markerMap[numMarkers];
+				if (markerInd != --numMarkers) {
+					markerMap[markerInd] = markerMap[numMarkers];
 				}
+				System.out.println("Cache miss, evicting page " + pageID);
 				return;
 			}
 			count++;
-			marker = (marker + 1) % numMarkers;
+			markerInd = (markerInd + 1) % numMarkers;
 		}
 		throw new IllegalStateException("Too many leased pages, cannot evict");
 	}

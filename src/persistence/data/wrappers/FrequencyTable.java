@@ -16,8 +16,14 @@ public class FrequencyTable extends Tree {
 	public final static byte MASTER_MEMBER = (byte)0xFF;
 	public final static int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
 	
+	private FrequencyTableHeader freqHeader;
 	public FrequencyTable(String mainFile, String rollbackFile) throws Exception {
 		super(mainFile, rollbackFile, MAX_CACHED_PAGES, PAGE_SIZE, ENTRY_SIZE);
+		if (header.pageCount() == 1 && header.finalPageEntryCount() == 1) {
+			freqHeader = new FrequencyTableHeader(addEntry());
+		} else {
+			freqHeader = new FrequencyTableHeader(getEntry(0, 1));
+		}
 	}
 	
 	private FrequencyTableEntry getFrequencyEntry(TreePointer pointer) throws Exception {
@@ -43,6 +49,7 @@ public class FrequencyTable extends Tree {
 		if (masterEntry.memberID() != MASTER_MEMBER) {masterEntry.close(); throw new Exception("Pointer does not point to a master entry."); }
 		FrequencyTableEntry entry = getFrequencyEntry(masterEntry.next());
 		FrequencyTableEntry last = null;
+		freqHeader.totalWordCount(freqHeader.totalWordCount() + 1);
 		while (entry != null) {
 			if (entry.memberID() == memberID) {
 				entry.count(entry.count() + 1);
@@ -60,6 +67,7 @@ public class FrequencyTable extends Tree {
 		entry = addFrequencyEntry();
 		entry.count(1);
 		entry.memberID(memberID);
+		freqHeader.uniqueWordCount(freqHeader.uniqueWordCount() + 1);
 		masterEntry.count(masterEntry.count() + 1);
 		if (last != null) {
 			last.next(entry.self());
@@ -136,6 +144,14 @@ public class FrequencyTable extends Tree {
 		masterEntry.close();
 		return countMap;
 		
+	}
+	
+	public long getTotalWordCount() {
+		return freqHeader.totalWordCount();
+	}
+	
+	public int getUniqueWordCount(){
+		return freqHeader.uniqueWordCount();
 	}
 	
 	public void setExternalPointer(TreePointer pointer, TreePointer externalPointer) throws Exception {

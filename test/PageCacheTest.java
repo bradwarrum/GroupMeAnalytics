@@ -42,12 +42,15 @@ public class PageCacheTest {
 	public void freqSys() throws Exception {
 		FrequencySystem sys = new FrequencySystem();
 		HashSet<String> words = new HashSet<String>();
+		int wordct = 0;
 		for (String s : testString.toLowerCase().replaceAll("[.,\"()?!*;:]", "").split(" ")) {
 			words.add(s);
+			wordct++;
 		}
 		GMMessage msg = new GMMessage(testString, (byte)128, 123456);
 		sys.processMessage(msg);
 		sys.commit();
+		System.out.println(wordct);
 		for (String word : words) {
 			System.out.println(word + " : " + sys.getTotalWordCount(word));
 		}
