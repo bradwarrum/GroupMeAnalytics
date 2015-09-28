@@ -1,73 +1,58 @@
-package persistence.data;
+package persistence.data.models;
 import java.nio.ByteBuffer;
 
 import persistence.caching.PageEntry;
+import persistence.data.structures.TreePointer;
 
-@SuppressWarnings("unused")
-public class TreeHeader implements AutoCloseable {
-	private PageEntry backingEntry;
-	private static final ByteBuffer intbuffer = ByteBuffer.allocate(Integer.BYTES * 2 + Short.BYTES);
+public class TreeHeader extends TreeEntry {
+
 	private static final int PAGE_COUNT_IND = 0;
 	private static final int FP_ENTRY_COUNT_IND = PAGE_COUNT_IND + Integer.BYTES;
 	private static final int FIRST_ENTRY_IND = FP_ENTRY_COUNT_IND + Short.BYTES;
 	private static final int MIN_ENTRY_SIZE = FIRST_ENTRY_IND + Integer.BYTES;
-	
+	private static final ByteBuffer intbuffer = ByteBuffer.allocate(MIN_ENTRY_SIZE);
 	private int cachedPageCount = -1;
 	private short cachedEntryCount = -1;
 
 	public TreeHeader(PageEntry rawEntry) {
-		backingEntry = rawEntry;
+		super(rawEntry);
 	}
 	public int pageCount() {
 		if (cachedPageCount > 0) return cachedPageCount;
-		intbuffer.clear();
-		backingEntry.readData(intbuffer.array(), PAGE_COUNT_IND, Integer.BYTES);
-		cachedPageCount = intbuffer.getInt();
+		cachedPageCount = getInt(PAGE_COUNT_IND);
 		return cachedPageCount;
 	}
 
 	public void pageCount(int newPageCount) {
 		cachedPageCount = newPageCount;
-		intbuffer.clear();
-		intbuffer.putInt(newPageCount);
-		backingEntry.writeData(intbuffer.array(), PAGE_COUNT_IND, Integer.BYTES);
+		putInt(newPageCount, PAGE_COUNT_IND);
 	}
 
 	public short finalPageEntryCount() {
 		if (cachedEntryCount > 0) return cachedEntryCount;
-		intbuffer.clear();
-		backingEntry.readData(intbuffer.array(), FP_ENTRY_COUNT_IND, Short.BYTES);
-		cachedEntryCount = intbuffer.getShort();
+		cachedEntryCount = getShort(FP_ENTRY_COUNT_IND);
 		return cachedEntryCount;
 	}
 
 	public void finalPageEntryCount(short newEntryCount) {
 		cachedEntryCount = newEntryCount;
-		intbuffer.clear();
-		intbuffer.putShort(newEntryCount);
-		backingEntry.writeData(intbuffer.array(), FP_ENTRY_COUNT_IND, Short.BYTES);
+		putShort(newEntryCount, FP_ENTRY_COUNT_IND);
 	}
 	
 	public int firstEntry() {
-		intbuffer.clear();
-		backingEntry.readData(intbuffer.array(), FIRST_ENTRY_IND, Integer.BYTES);
-		return intbuffer.getInt();
+		return getInt(FIRST_ENTRY_IND);
 	}
 	
 	public void firstEntry(int entry) {
-		intbuffer.clear();
-		intbuffer.putInt(entry);
-		backingEntry.writeData(intbuffer.array(), FIRST_ENTRY_IND, Integer.BYTES);
+		putInt(entry, FIRST_ENTRY_IND);
 	}
 	
 	public void writeAll(int newPageCount, short newEntryCount, int newFirstEntry) {
-		intbuffer.clear();
 		cachedPageCount = newPageCount;
 		cachedEntryCount = newEntryCount;
-		intbuffer.putInt(newPageCount);
-		intbuffer.putShort(newEntryCount);
-		intbuffer.putInt(newFirstEntry);
-		backingEntry.writeData(intbuffer.array(), PAGE_COUNT_IND, MIN_ENTRY_SIZE);
+		putInt(newPageCount, PAGE_COUNT_IND);
+		putShort(newEntryCount, FP_ENTRY_COUNT_IND);
+		putInt(newFirstEntry, FIRST_ENTRY_IND);
 	}
 	
 	public int incrementPageCount() {
@@ -83,8 +68,11 @@ public class TreeHeader implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
-		backingEntry.close();
-		backingEntry = null;
+	protected ByteBuffer buffer() {
+		return intbuffer;
+	}
+	@Override
+	protected TreePointer self() {
+		return new TreePointer(0, 1);
 	}
 }

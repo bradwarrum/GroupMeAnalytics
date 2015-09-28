@@ -1,11 +1,12 @@
-package persistence.data.wrappers;
+package persistence.data.models;
 import java.nio.ByteBuffer;
 
 import persistence.caching.PageEntry;
-import persistence.data.TreePointer;
+import persistence.data.structures.MessageReferenceTable;
+import persistence.data.structures.TreePointer;
+import persistence.data.structures.WordTree;
 
-public class MRTWordEntry implements AutoCloseable {
-	private PageEntry backingEntry;
+public class MRTWordEntry extends TreeEntry {
 	private static final int HEADER_IND = 0;
 	private static final short EOS_MASK = (short)0x8000;
 	private static final short MESSAGE_OFFSET_MASK = 0x7FFF;
@@ -14,34 +15,7 @@ public class MRTWordEntry implements AutoCloseable {
 	public static final int MIN_ENTRY_SIZE = WORD_REF_IND + Integer.BYTES;
 	private static ByteBuffer intbuffer = ByteBuffer.allocate(MIN_ENTRY_SIZE);
 	public MRTWordEntry(PageEntry backingEntry) {
-		this.backingEntry = backingEntry;
-	}
-	@Override
-	public void close() throws Exception {
-		backingEntry.close();
-	}
-	private int getInt(int entryOffset) {
-		intbuffer.clear();
-		backingEntry.readData(intbuffer.array(), entryOffset, Integer.BYTES);
-		return intbuffer.getInt();
-	}
-	
-	private short getShort(int entryOffset) {
-		intbuffer.clear();
-		backingEntry.readData(intbuffer.array(), entryOffset, Short.BYTES);
-		return intbuffer.getShort();
-	}
-	
-	private void putInt(int value, int entryOffset) {
-		intbuffer.clear();
-		intbuffer.putInt(value);
-		backingEntry.writeData(intbuffer.array(), entryOffset, Integer.BYTES);
-	}
-	
-	private void putShort(short value, int entryOffset) {
-		intbuffer.clear();
-		intbuffer.putShort(value);
-		backingEntry.writeData(intbuffer.array(), entryOffset, Short.BYTES);
+		super(backingEntry);
 	}
 	
 	public boolean endOfSequence(){
@@ -84,7 +58,14 @@ public class MRTWordEntry implements AutoCloseable {
 	public void word(TreePointer word) {
 		putInt(word.rawValue(), WORD_REF_IND);
 	}
+	
+	@Override
 	public TreePointer self() {
-		return new TreePointer(backingEntry.pageID(), backingEntry.entryIndex(), MessageReferenceTable.ENTRIES_PER_PAGE);
+		return new TreePointer(pageID(), entryIndex(), MessageReferenceTable.ENTRIES_PER_PAGE);
+	}
+
+	@Override
+	protected ByteBuffer buffer() {
+		return intbuffer;
 	}
 }

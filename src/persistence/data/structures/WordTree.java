@@ -1,9 +1,8 @@
-package persistence.data.wrappers;
+package persistence.data.structures;
 import java.nio.charset.Charset;
 
 import persistence.caching.PageEntry;
-import persistence.data.Tree;
-import persistence.data.TreePointer;
+import persistence.data.models.WordTreeEntry;
 
 public class WordTree extends Tree {
 	private static int MAX_CACHED_PAGES = 512; //Minimum is 5 so far

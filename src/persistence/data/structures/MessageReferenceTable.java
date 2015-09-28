@@ -1,12 +1,12 @@
-package persistence.data.wrappers;
+package persistence.data.structures;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.sun.org.apache.xml.internal.security.encryption.Reference;
 
 import persistence.caching.PageEntry;
-import persistence.data.Tree;
-import persistence.data.TreePointer;
+import persistence.data.models.MRTMessageEntry;
+import persistence.data.models.MRTWordEntry;
 
 public class MessageReferenceTable extends Tree {
 	private static final int MAX_CACHED_PAGES = 1024;

@@ -1,12 +1,12 @@
-package persistence.data.wrappers;
+package persistence.data.structures;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import com.sun.jndi.ldap.EntryChangeResponseControl;
 
 import persistence.caching.PageEntry;
-import persistence.data.Tree;
-import persistence.data.TreePointer;
+import persistence.data.models.FrequencyTableEntry;
+import persistence.data.models.FrequencyTableHeader;
 
 public class FrequencyTable extends Tree {
 

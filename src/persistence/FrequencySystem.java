@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import persistence.data.TreePointer;
-import persistence.data.wrappers.FrequencyTable;
-import persistence.data.wrappers.MessageReferenceTable;
-import persistence.data.wrappers.WordTree;
+import persistence.data.structures.FrequencyTable;
+import persistence.data.structures.MessageReferenceTable;
+import persistence.data.structures.TreePointer;
+import persistence.data.structures.WordTree;
 
 public class FrequencySystem {
 	private final WordTree wordTree;

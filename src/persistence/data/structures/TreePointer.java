@@ -1,4 +1,4 @@
-package persistence.data;
+package persistence.data.structures;
 
 public class TreePointer {
 	private final int ENTRIES_PER_PAGE;

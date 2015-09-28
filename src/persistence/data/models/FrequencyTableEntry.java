@@ -1,42 +1,29 @@
-package persistence.data.wrappers;
+package persistence.data.models;
 import java.nio.ByteBuffer;
 
 import persistence.caching.PageEntry;
-import persistence.data.TreePointer;
+import persistence.data.structures.FrequencyTable;
+import persistence.data.structures.MessageReferenceTable;
+import persistence.data.structures.TreePointer;
 
-public class FrequencyTableEntry implements AutoCloseable{
-	private PageEntry backingEntry;
+public class FrequencyTableEntry extends TreeEntry{
 	private static final int MEMBER_ID_IND = 0;
 	private static final int COUNT_IND = MEMBER_ID_IND + Byte.BYTES;
 	private static final int NEXT_IND = COUNT_IND + Integer.BYTES;
 	private static final int LOOKUP_PTR_IND = NEXT_IND + Integer.BYTES;
 	public static final int MIN_ENTRY_SIZE = LOOKUP_PTR_IND + Integer.BYTES;
 	private static ByteBuffer intbuffer = ByteBuffer.allocate(MIN_ENTRY_SIZE);
-	public FrequencyTableEntry(PageEntry backingEntry) {
-		this.backingEntry = backingEntry;
-	}
-	@Override
-	public void close() throws Exception {
-		backingEntry.close();
-	}
-	private int getInt(int entryOffset) {
-		intbuffer.clear();
-		backingEntry.readData(intbuffer.array(), entryOffset, Integer.BYTES);
-		return intbuffer.getInt();
-	}
 	
-	private void putInt(int value, int entryOffset) {
-		intbuffer.clear();
-		intbuffer.putInt(value);
-		backingEntry.writeData(intbuffer.array(), entryOffset, Integer.BYTES);
+	public FrequencyTableEntry(PageEntry backingEntry) {
+		super(backingEntry);
 	}
 	
 	public byte memberID() {
-		return backingEntry.readData(MEMBER_ID_IND);
+		return getByte(MEMBER_ID_IND);
 	}
 	
 	public void memberID(byte newID) {
-		backingEntry.writeData(newID, MEMBER_ID_IND);
+		putByte(newID, MEMBER_ID_IND);
 	}
 	
 	public int count() {
@@ -64,6 +51,11 @@ public class FrequencyTableEntry implements AutoCloseable{
 	}
 	
 	public TreePointer self() {
-		return new TreePointer(backingEntry.pageID(), backingEntry.entryIndex(), FrequencyTable.ENTRIES_PER_PAGE);
+		return new TreePointer(pageID(), entryIndex(), FrequencyTable.ENTRIES_PER_PAGE);
+	}
+
+	@Override
+	protected ByteBuffer buffer() {
+		return intbuffer;
 	}
 }

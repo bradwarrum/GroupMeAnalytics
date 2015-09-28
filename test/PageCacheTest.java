@@ -6,7 +6,7 @@ import persistence.FrequencySystem;
 import persistence.GMMessage;
 import persistence.caching.PageCache;
 import persistence.caching.PageEntry;
-import persistence.data.wrappers.WordTree;
+import persistence.data.structures.WordTree;
 
 public class PageCacheTest {
 	//@Test

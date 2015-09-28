@@ -1,6 +1,7 @@
-package persistence.data;
+package persistence.data.structures;
 import persistence.caching.PageCache;
 import persistence.caching.PageEntry;
+import persistence.data.models.TreeHeader;
 
 public abstract class Tree {
 	private final int PAGE_SIZE;
