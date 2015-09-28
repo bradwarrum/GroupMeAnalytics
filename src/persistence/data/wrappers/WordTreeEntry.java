@@ -74,12 +74,12 @@ public class WordTreeEntry implements AutoCloseable {
 		putInt(pointer.rawValue(), PARENT_IND);
 	}
 	
-	public int firstFrequency() {
-		return getInt(FIRST_FREQ_IND);
+	public TreePointer firstFrequency() {
+		return new TreePointer(getInt(FIRST_FREQ_IND), FrequencyTable.ENTRIES_PER_PAGE);
 	}
 	
-	public void firstFrequency(int offset) {
-		putInt(offset, FIRST_FREQ_IND);
+	public void firstFrequency(TreePointer offset) {
+		putInt(offset.rawValue(), FIRST_FREQ_IND);
 	}
 
 	@Override

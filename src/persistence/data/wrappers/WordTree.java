@@ -30,6 +30,12 @@ public class WordTree extends Tree {
 		return (pe == null) ? null : new WordTreeEntry(pe);
 	}
 	
+	private String sanitize(String word) {
+		word = word.replace('’', '\'');
+		word = word.replace('‘', '\'');
+		return word;
+	}
+	
 	/**
 	 * Reserves a word in the frequency tree, if it does not already exist.
 	 * @param word The word to add to the frequency tree
@@ -38,9 +44,9 @@ public class WordTree extends Tree {
 	 */
 	@SuppressWarnings("resource")
 	public TreePointer mapWord(String word) throws Exception {
+		word = sanitize(word);		
 		if (!word.matches("[a-zA-z\']+")) return null;
 		byte[] letters = word.toLowerCase().getBytes(Charset.forName("US-ASCII"));
-		boolean previouslyMapped = true;
 		// Get root node
 		TreePointer firstEntry 	= new TreePointer(header.firstEntry(), ENTRIES_PER_PAGE);
 		WordTreeEntry parent  	= null;
@@ -50,7 +56,6 @@ public class WordTree extends Tree {
 		for (int i = 0; i < letters.length; i++) {
 			byte b = letters[i];
 			if (current == null) {
-				previouslyMapped = false;
 				current = addWordTreeEntry();
 				current.value(b);
 				if (prev != null) {prev.next(current.self()); prev.close(); }
@@ -75,7 +80,6 @@ public class WordTree extends Tree {
 					current = getWordTreeEntry(current.next());
 					i--;
 				} else {
-					previouslyMapped = false;
 					WordTreeEntry insert = addWordTreeEntry();
 					insert.value(b);
 					if (parent != null) {
@@ -110,6 +114,7 @@ public class WordTree extends Tree {
 	
 	@SuppressWarnings("resource")
 	public TreePointer find(String word) throws Exception {
+		word = sanitize(word);		
 		if (!word.matches("[a-zA-z\']+")) return null;
 		byte[] letters = word.toLowerCase().getBytes(Charset.forName("US-ASCII"));
 		TreePointer firstEntry = new TreePointer(header.firstEntry(), ENTRIES_PER_PAGE);
@@ -140,16 +145,41 @@ public class WordTree extends Tree {
 		return retval;
 	}
 	
+	@SuppressWarnings("resource")
+	public boolean matches(TreePointer finalLetter, String word) throws Exception {
+		word = sanitize(word);
+		if (!word.matches("[a-zA-z\']+")) return false;
+		byte[] letters = word.toLowerCase().getBytes(Charset.forName("US-ASCII"));
+		if (letters.length == 0) return false;
+		WordTreeEntry current = getWordTreeEntry(finalLetter);
+		for (int i = letters.length - 1; i >= 0; i--) {
+			if (current == null) return false;
+			if (current.value() != letters[i]) {
+				current.close();
+				return false;
+			}
+			WordTreeEntry tmp = current;
+			current = getWordTreeEntry(current.next());
+			tmp.close();
+		}
+		if (current == null) {
+			return true;
+		} else {
+			current.close();
+			return false;
+		}
+	}
+	
 	public void modifyExternalPointer(TreePointer entry, TreePointer externalPointerVal) throws Exception {
 		WordTreeEntry wte = getWordTreeEntry(entry);
-		wte.firstFrequency(externalPointerVal.rawValue());
+		wte.firstFrequency(externalPointerVal);
 		wte.close();
 	}
 	
 	public TreePointer getExternalPointer(TreePointer entry) throws Exception {
 		WordTreeEntry wte = getWordTreeEntry(entry);
-		int intptr = wte.firstFrequency();
-		TreePointer pointer = (intptr == 0) ? null : new TreePointer(wte.firstFrequency(), ENTRIES_PER_PAGE);
+		TreePointer pointer = wte.firstFrequency();
+		pointer = (pointer.rawValue() == 0) ? null : pointer;
 		wte.close();
 		return pointer;
 	}

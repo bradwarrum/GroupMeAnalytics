@@ -19,7 +19,7 @@ public abstract class Tree {
 			pageCache.truncateTo(0);
 			pageCache.createPage();
 			header = new TreeHeader(pageCache.entryAt(0, 0));
-			header.writeAll(1, 1, 0);
+			header.writeAll(1, (short)1, 0);
 		} else {
 			//Keep page 0 in memory, always
 			header = new TreeHeader(pageCache.entryAt(0, 0));
@@ -44,7 +44,7 @@ public abstract class Tree {
 		int entryIndex = header.finalPageEntryCount();
 		if (header.finalPageEntryCount() == ENTRIES_PER_PAGE) {
 			entryIndex = 0;
-			header.finalPageEntryCount(1);
+			header.finalPageEntryCount((short)1);
 			pageID = pageCache.createPage();
 			header.incrementPageCount();
 		} else {

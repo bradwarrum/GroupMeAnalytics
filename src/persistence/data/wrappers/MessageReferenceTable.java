@@ -1,4 +1,9 @@
 package persistence.data.wrappers;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.sun.org.apache.xml.internal.security.encryption.Reference;
+
 import persistence.caching.PageEntry;
 import persistence.data.Tree;
 import persistence.data.TreePointer;
@@ -6,44 +11,68 @@ import persistence.data.TreePointer;
 public class MessageReferenceTable extends Tree {
 	private static final int MAX_CACHED_PAGES = 1024;
 	private static final int PAGE_SIZE = 1024;
-	private static final int ENTRY_SIZE = MessageReferenceEntry.MIN_ENTRY_SIZE;
+	private static final int ENTRY_SIZE = MRTWordEntry.MIN_ENTRY_SIZE;
 	public static final int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
 	
 	public MessageReferenceTable(String mainFile, String rollbackFile) throws Exception {
 		super(mainFile, rollbackFile, MAX_CACHED_PAGES, PAGE_SIZE, ENTRY_SIZE);
 	}
 	
-	private MessageReferenceEntry getReferenceEntry(TreePointer pointer) throws Exception {
+	private MRTWordEntry getWordEntry(TreePointer pointer) throws Exception {
 		PageEntry pe = getEntry(pointer);
-		return (pe == null) ? null : new MessageReferenceEntry(pe);
+		return (pe == null) ? null : new MRTWordEntry(pe);
 	}
 	
-	private MessageReferenceEntry addReferenceEntry() throws Exception {
+	private MRTWordEntry addWordEntry() throws Exception {
 		PageEntry pe = addEntry();
-		return (pe == null) ? null : new MessageReferenceEntry(pe);
+		return (pe == null) ? null : new MRTWordEntry(pe);
 	}
 	
-	public TreePointer pushMessageReference(int messageID, TreePointer currentHead) throws Exception {
-		MessageReferenceEntry newHead = addReferenceEntry();
-		newHead.messageID(messageID);
-		newHead.next(currentHead);
-		TreePointer headPtr = newHead.self();
-		newHead.close();
-		return headPtr;
+	private MRTMessageEntry getMessageEntry(TreePointer pointer) throws Exception {
+		PageEntry pe = getEntry(pointer);
+		return (pe == null) ? null : new MRTMessageEntry(pe);
 	}
 	
-	public void setTrailingReference(TreePointer forEntry, TreePointer externalRef) throws Exception {
-		if (forEntry == null || forEntry.rawValue() == 0) throw new IllegalArgumentException("Pointer cannot be null");
-		MessageReferenceEntry entry = getReferenceEntry(forEntry);
-		entry.trailingWord(externalRef);
+	private MRTMessageEntry addMessageEntry() throws Exception {
+		PageEntry pe = addEntry();
+		return (pe == null) ? null : new MRTMessageEntry(pe);
+	}
+	
+	public TreePointer startMessage(int messageID) throws Exception {
+		MRTMessageEntry newMessage = addMessageEntry();
+		newMessage.messageID(messageID);
+		TreePointer pointer = newMessage.self();
+		newMessage.close();
+		return pointer;
+	}
+	
+	public void finishMessage(TreePointer lastWord) throws Exception {
+		MRTWordEntry lastWordEntry = getWordEntry(lastWord);
+		lastWordEntry.endOfSequence(true);
+		MRTMessageEntry header = getMessageEntry(new TreePointer(lastWordEntry.self().rawValue() - lastWordEntry.messageOffset(), ENTRIES_PER_PAGE));
+		header.count((short)(lastWordEntry.messageOffset() + 1));
+		header.close();
+		lastWordEntry.close();
+	}
+	
+	public TreePointer addWord(short wordIndex, TreePointer wordReference, TreePointer currentHead) throws Exception{
+		return addWord(wordIndex, wordReference, currentHead, false);
+	}
+	
+	public TreePointer addWord(short wordIndex, TreePointer wordReference, TreePointer currentHead, boolean endOfSequence) throws Exception {
+		if (currentHead.rawValue() == 0) currentHead = null;
+		MRTWordEntry entry = addWordEntry();
+		MRTWordEntry head = (currentHead == null) ? null : getWordEntry(currentHead);
+		if (endOfSequence) entry.endOfSequence(true);
+		entry.messageOffset(wordIndex);
+		entry.word(wordReference);
+		if (head != null) {
+			head.next(entry.self());
+			head.close();
+		}
+		TreePointer entryPtr = entry.self();
 		entry.close();
+		return entryPtr;
 	}
 	
-	public TreePointer getTrailingReference(TreePointer forEntry) throws Exception {
-		if (forEntry == null || forEntry.rawValue() == 0) throw new IllegalArgumentException("Pointer cannot be null");
-		MessageReferenceEntry entry = getReferenceEntry(forEntry);
-		TreePointer ptr = entry.trailingWord();
-		entry.close();
-		return ptr;
-	}
 }

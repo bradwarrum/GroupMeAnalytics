@@ -2,6 +2,8 @@ package persistence.data.wrappers;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.sun.jndi.ldap.EntryChangeResponseControl;
+
 import persistence.caching.PageEntry;
 import persistence.data.Tree;
 import persistence.data.TreePointer;
@@ -11,6 +13,7 @@ public class FrequencyTable extends Tree {
 	private final static int MAX_CACHED_PAGES = 1024;
 	private final static int PAGE_SIZE = 1024;
 	private final static int ENTRY_SIZE = FrequencyTableEntry.MIN_ENTRY_SIZE;
+	public final static byte MASTER_MEMBER = (byte)0xFF;
 	public final static int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
 	
 	public FrequencyTable(String mainFile, String rollbackFile) throws Exception {
@@ -27,14 +30,26 @@ public class FrequencyTable extends Tree {
 		return (pe == null) ? null : new FrequencyTableEntry(pe);
 	}
 	
+	public TreePointer addMasterRecord() throws Exception {
+		FrequencyTableEntry entry = addFrequencyEntry();
+		entry.memberID(MASTER_MEMBER);
+		TreePointer pointer = entry.self();
+		entry.close();
+		return pointer;
+	}
+	
 	public TreePointer incrementCount(byte memberID, TreePointer firstFrequency) throws Exception {
-		FrequencyTableEntry entry = (firstFrequency == null) ? null : getFrequencyEntry(firstFrequency);
+		FrequencyTableEntry masterEntry = (firstFrequency == null) ? null : getFrequencyEntry(firstFrequency);
+		if (masterEntry.memberID() != MASTER_MEMBER) {masterEntry.close(); throw new Exception("Pointer does not point to a master entry."); }
+		FrequencyTableEntry entry = getFrequencyEntry(masterEntry.next());
 		FrequencyTableEntry last = null;
 		while (entry != null) {
 			if (entry.memberID() == memberID) {
 				entry.count(entry.count() + 1);
+				masterEntry.count(masterEntry.count() + 1);
 				TreePointer actualEntry = entry.self();
 				entry.close();
+				masterEntry.close();
 				if (last != null) last.close();
 				return actualEntry;
 			} 
@@ -44,48 +59,68 @@ public class FrequencyTable extends Tree {
 		}
 		entry = addFrequencyEntry();
 		entry.count(1);
+		entry.memberID(memberID);
+		masterEntry.count(masterEntry.count() + 1);
 		if (last != null) {
 			last.next(entry.self());
 			last.close();
+		} else {
+			masterEntry.next(entry.self());
 		}
 		TreePointer actualEntry = entry.self();
 		entry.close();
+		masterEntry.close();
 		return actualEntry;
 	}
 	
-	public int getCount(TreePointer firstFrequency, byte memberID) throws Exception {
-		if (firstFrequency == null || firstFrequency.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
-		FrequencyTableEntry entry = getFrequencyEntry(firstFrequency);
+	public int getCount(TreePointer masterRecord, byte memberID) throws Exception {
+		if (masterRecord == null || masterRecord.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
+		FrequencyTableEntry masterEntry = getFrequencyEntry(masterRecord);
+		if (masterEntry == null) throw new Exception("Pointer does not correspond to a master record.");
+		if (masterEntry.memberID() != MASTER_MEMBER) {
+			masterEntry.close(); 
+			throw new Exception("Pointer does not correspond to a master record.");
+		}
+		FrequencyTableEntry entry = getFrequencyEntry(masterEntry.next());
+		int count = 0;
 		while (entry != null) {
 			if (entry.memberID() == memberID) {
-				int count = entry.count();
+				count = entry.count();
 				entry.close();
-				return count;
+				break;
 			}
 			FrequencyTableEntry next = getFrequencyEntry(entry.next());
 			entry.close();
 			entry = next;
 		}
-		return 0;
+		masterEntry.close();
+		return count;
 	}
 	
-	public int getTotalCount(TreePointer firstFrequency) throws Exception {
-		if (firstFrequency == null || firstFrequency.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
-		FrequencyTableEntry entry = getFrequencyEntry(firstFrequency);
-		int totalCount = 0;
-		while (entry != null) {
-			totalCount += entry.count();
-			FrequencyTableEntry next = getFrequencyEntry(entry.next());
-			entry.close();
-			entry = next;
+	public int getTotalCount(TreePointer masterRecord) throws Exception {
+		if (masterRecord == null || masterRecord.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
+		FrequencyTableEntry masterEntry = getFrequencyEntry(masterRecord);
+		if (masterEntry == null) throw new Exception("Pointer does not correspond to a master record.");
+		if (masterEntry.memberID() != MASTER_MEMBER) {
+			masterEntry.close(); 
+			throw new Exception("Pointer does not correspond to a master record.");
 		}
+		int totalCount = masterEntry.count();
+		masterEntry.close();
 		return totalCount;
 	}
 	
-	public HashMap<Byte, Integer> getCounts(TreePointer firstFrequency, HashSet<Byte>memberIDs) throws Exception {
-		if (firstFrequency == null || firstFrequency.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
+	public HashMap<Byte, Integer> getCounts(TreePointer masterRecord, HashSet<Byte>memberIDs) throws Exception {
+		
+		if (masterRecord == null || masterRecord.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
+		FrequencyTableEntry masterEntry = getFrequencyEntry(masterRecord);
+		if (masterEntry == null) throw new Exception("Pointer does not correspond to a master record.");
+		if (masterEntry.memberID() != MASTER_MEMBER) {
+			masterEntry.close();
+			throw new Exception("Pointer does not correspond to a master record.");
+		}
 		HashMap<Byte, Integer> countMap = new HashMap<Byte, Integer>(memberIDs.size());
-		FrequencyTableEntry entry = getFrequencyEntry(firstFrequency);
+		FrequencyTableEntry entry = getFrequencyEntry(masterEntry.next());
 		while (entry != null) {
 			if (memberIDs.remove(entry.memberID())) {
 				countMap.put(entry.memberID(), entry.count());
@@ -98,6 +133,7 @@ public class FrequencyTable extends Tree {
 			countMap.put(b,  0);
 		}
 		memberIDs.clear();
+		masterEntry.close();
 		return countMap;
 		
 	}

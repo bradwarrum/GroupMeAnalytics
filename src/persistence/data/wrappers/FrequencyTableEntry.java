@@ -56,7 +56,7 @@ public class FrequencyTableEntry implements AutoCloseable{
 	}
 	
 	public TreePointer pointer() {
-		return new TreePointer(getInt(LOOKUP_PTR_IND), FrequencyTable.ENTRIES_PER_PAGE);
+		return new TreePointer(getInt(LOOKUP_PTR_IND), MessageReferenceTable.ENTRIES_PER_PAGE);
 	}
 	
 	public void pointer(TreePointer pointer) {
