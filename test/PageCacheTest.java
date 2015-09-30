@@ -1,7 +1,15 @@
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import org.junit.Test;
 
+import com.sun.org.apache.xml.internal.serializer.utils.Messages;
+
+import lang.handlers.CommandHandler;
+import lang.parsing.ChatProcessor;
+import lang.parsing.Command;
+import network.models.JSONMessageResponse;
 import persistence.FrequencySystem;
 import persistence.GMMessage;
 import persistence.caching.PageCache;
@@ -23,7 +31,7 @@ public class PageCacheTest {
 		entry.close();
 		
 	}
-	private static String testString = "The goal here is for you to maintain the level of concentration you normally experience when you read in untimed situations. When you’re really into a book or an article, the rest of the world fades away and you disappear into the page. Unfortunately, time constraints and the pressure of knowing you’re being tested make it difficult to maintain this kind of natural, high-level concentration. Reading actively in the manner we’ve described builds your concentration.";
+	private static String testString = "The goal here is for you to maintain the level of concentration you normally experience when you read in untimed situations. When youâ€™re really into a book or an article, the rest of the world fades away and you disappear into the page. Unfortunately, time constraints and the pressure of knowing youâ€™re being tested make it difficult to maintain this kind of natural, high-level concentration. Reading actively in the manner weâ€™ve described builds your concentration.";
 	//private static String testString = "A B C A B C";
 	//@Test
 	public void freqCacheWrapper() throws Exception {
@@ -38,7 +46,7 @@ public class PageCacheTest {
 		}
 		wrapper.commit();
 	}
-	@Test
+	//@Test
 	public void freqSys() throws Exception {
 		FrequencySystem sys = new FrequencySystem();
 		HashSet<String> words = new HashSet<String>();
@@ -55,6 +63,21 @@ public class PageCacheTest {
 			System.out.println(word + " : " + sys.getTotalWordCount(word));
 		}
 	}
+	private static final String[] messages = new String[] {"Jarvis. Message count me boy", "Jarvis, message cnt", "jvaris message count", "jarvis message count", "jarvis message number 1", "jarvis, remember when #thathappened?"};
+	@Test
+	public void chatProcessor() throws UnsupportedEncodingException {
+		JSONMessageResponse rsp = new JSONMessageResponse();
+		JSONMessageResponse.Message msg = rsp.new Message();
+		msg.senderName = "Brad";
+		msg.system = false;
+		msg.senderType = "user";
+		ChatProcessor proc = new ChatProcessor("jarvis", new HashMap<Command, CommandHandler>());
+		for (String s : messages) {
+			msg.text = s;
+			System.out.println(proc.process(msg));
+		}
 
+	
+	}
 
 }

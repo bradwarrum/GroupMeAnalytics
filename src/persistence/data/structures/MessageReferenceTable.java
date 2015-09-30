@@ -55,17 +55,16 @@ public class MessageReferenceTable extends Tree {
 		lastWordEntry.close();
 	}
 	
-	public TreePointer addWord(short wordIndex, TreePointer wordReference, TreePointer currentHead) throws Exception{
-		return addWord(wordIndex, wordReference, currentHead, false);
+	public TreePointer addWord(short wordIndex, TreePointer currentHead) throws Exception{
+		return addWord(wordIndex, currentHead, false);
 	}
 	
-	public TreePointer addWord(short wordIndex, TreePointer wordReference, TreePointer currentHead, boolean endOfSequence) throws Exception {
+	public TreePointer addWord(short wordIndex, TreePointer currentHead, boolean endOfSequence) throws Exception {
 		if (currentHead.rawValue() == 0) currentHead = null;
 		MRTWordEntry entry = addWordEntry();
 		MRTWordEntry head = (currentHead == null) ? null : getWordEntry(currentHead);
 		if (endOfSequence) entry.endOfSequence(true);
 		entry.messageOffset(wordIndex);
-		entry.word(wordReference);
 		if (head != null) {
 			head.next(entry.self());
 			head.close();

@@ -20,8 +20,12 @@ public class FrequencySystem {
 		msgRefs = new MessageReferenceTable("./data/msgref", "./data/msgref.rbjf");
 	}
 	
+	private String sanitizeInput(String input) {
+		return input.replaceAll("[.,\"()?!*;:]", "");
+	}
+	
 	public void processMessage(GMMessage message) throws Exception {
-		String[] words = message.message().replaceAll("[.,\"()?!*;:]", "").split(" ");
+		String[] words = sanitizeInput(message.message()).split(" ");
 		
 		TreePointer lastMsgRef = null;
 		msgRefs.startMessage(message.messageID());
@@ -43,7 +47,7 @@ public class FrequencySystem {
 			if (msgRefHead.rawValue() == 79) {
 				System.out.println("Debug");
 			}			
-			msgRefHead = msgRefs.addWord(wordIndex, wordTreeEntry, msgRefHead);
+			msgRefHead = msgRefs.addWord(wordIndex, msgRefHead);
 			if (msgRefHead.rawValue() == 79) {
 				System.out.println("Debug");
 			}
@@ -55,9 +59,15 @@ public class FrequencySystem {
 		}
 		msgRefs.finishMessage(lastMsgRef);
 	}
+	public long getTotalWordCount() {
+		return freqTable.getTotalWordCount();
+	}
 	
+	public int getUniqueWordCount() {
+		return freqTable.getUniqueWordCount();
+	}
 	public int getTotalWordCount(String word) throws Exception {
-		word = word.replaceAll("[.,\"()?!*;:]", "");
+		word = sanitizeInput(word);
 		TreePointer wordTreeEntry = wordTree.find(word);
 		if (wordTreeEntry == null) return 0;
 		TreePointer freqPtr = wordTree.getExternalPointer(wordTreeEntry);
@@ -66,7 +76,7 @@ public class FrequencySystem {
 	}
 	
 	public HashMap<Byte, Integer> getWordCounts(String word, HashSet<Byte> memberIDs) throws Exception {
-		word = word.replaceAll("[.,\"()?!*;:]", "");
+		word = sanitizeInput(word);
 		TreePointer wordTreeEntry = wordTree.find(word);
 		if (wordTreeEntry == null) return null;
 		TreePointer freqPtr = wordTree.getExternalPointer(wordTreeEntry);
@@ -75,7 +85,7 @@ public class FrequencySystem {
 	}
 	
 	public int getWordCount(String word, byte memberID) throws Exception {
-		word = word.replaceAll("[.,\"()?!*;:]", "");		
+		word = sanitizeInput(word);		
 		TreePointer wordTreeEntry = wordTree.find(word);
 		if (wordTreeEntry == null) return 0;
 		TreePointer freqPtr = wordTree.getExternalPointer(wordTreeEntry);

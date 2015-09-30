@@ -7,7 +7,7 @@ import persistence.data.structures.TreePointer;
 
 public abstract class TreeEntry implements AutoCloseable{
 	private PageEntry backingEntry;
-	protected abstract ByteBuffer buffer();
+	private static final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
 	protected abstract TreePointer self();
 	
 	public TreeEntry(PageEntry backingEntry) {
@@ -23,39 +23,39 @@ public abstract class TreeEntry implements AutoCloseable{
 	}
 	
 	protected int getInt(int entryOffset) {
-		buffer().clear();
-		backingEntry.readData(buffer().array(), entryOffset, Integer.BYTES);
-		return buffer().getInt();
+		buffer.clear();
+		backingEntry.readData(buffer.array(), entryOffset, Integer.BYTES);
+		return buffer.getInt();
 	}
 	
 	protected short getShort(int entryOffset) {
-		buffer().clear();
-		backingEntry.readData(buffer().array(), entryOffset, Short.BYTES);
-		return buffer().getShort();
+		buffer.clear();
+		backingEntry.readData(buffer.array(), entryOffset, Short.BYTES);
+		return buffer.getShort();
 	}
 	
 	protected void putInt(int value, int entryOffset) {
-		buffer().clear();
-		buffer().putInt(value);
-		backingEntry.writeData(buffer().array(), entryOffset, Integer.BYTES);
+		buffer.clear();
+		buffer.putInt(value);
+		backingEntry.writeData(buffer.array(), entryOffset, Integer.BYTES);
 	}
 	
 	protected void putShort(short value, int entryOffset) {
-		buffer().clear();
-		buffer().putShort(value);
-		backingEntry.writeData(buffer().array(), entryOffset, Short.BYTES);
+		buffer.clear();
+		buffer.putShort(value);
+		backingEntry.writeData(buffer.array(), entryOffset, Short.BYTES);
 	}
 	
 	protected long getLong(int entryOffset) {
-		buffer().clear();
-		backingEntry.readData(buffer().array(), entryOffset, Long.BYTES);
-		return buffer().getLong();
+		buffer.clear();
+		backingEntry.readData(buffer.array(), entryOffset, Long.BYTES);
+		return buffer.getLong();
 	}
 	
 	protected void putLong(long value, int entryOffset) {
-		buffer().clear();
-		buffer().putLong(value);
-		backingEntry.writeData(buffer().array(), entryOffset, Long.BYTES);
+		buffer.clear();
+		buffer.putLong(value);
+		backingEntry.writeData(buffer.array(), entryOffset, Long.BYTES);
 	}
 	protected int pageID() {
 		return backingEntry.pageID();

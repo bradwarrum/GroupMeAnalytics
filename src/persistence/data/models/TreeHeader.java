@@ -1,6 +1,4 @@
 package persistence.data.models;
-import java.nio.ByteBuffer;
-
 import persistence.caching.PageEntry;
 import persistence.data.structures.TreePointer;
 
@@ -8,9 +6,7 @@ public class TreeHeader extends TreeEntry {
 
 	private static final int PAGE_COUNT_IND = 0;
 	private static final int FP_ENTRY_COUNT_IND = PAGE_COUNT_IND + Integer.BYTES;
-	private static final int FIRST_ENTRY_IND = FP_ENTRY_COUNT_IND + Short.BYTES;
-	private static final int MIN_ENTRY_SIZE = FIRST_ENTRY_IND + Integer.BYTES;
-	private static final ByteBuffer intbuffer = ByteBuffer.allocate(MIN_ENTRY_SIZE);
+	private static final int MIN_ENTRY_SIZE = FP_ENTRY_COUNT_IND + Short.BYTES;
 	private int cachedPageCount = -1;
 	private short cachedEntryCount = -1;
 
@@ -38,21 +34,13 @@ public class TreeHeader extends TreeEntry {
 		cachedEntryCount = newEntryCount;
 		putShort(newEntryCount, FP_ENTRY_COUNT_IND);
 	}
+
 	
-	public int firstEntry() {
-		return getInt(FIRST_ENTRY_IND);
-	}
-	
-	public void firstEntry(int entry) {
-		putInt(entry, FIRST_ENTRY_IND);
-	}
-	
-	public void writeAll(int newPageCount, short newEntryCount, int newFirstEntry) {
+	public void writeAll(int newPageCount, short newEntryCount) {
 		cachedPageCount = newPageCount;
 		cachedEntryCount = newEntryCount;
 		putInt(newPageCount, PAGE_COUNT_IND);
 		putShort(newEntryCount, FP_ENTRY_COUNT_IND);
-		putInt(newFirstEntry, FIRST_ENTRY_IND);
 	}
 	
 	public int incrementPageCount() {
@@ -65,11 +53,6 @@ public class TreeHeader extends TreeEntry {
 		finalPageEntryCount();
 		finalPageEntryCount((short)(cachedEntryCount + 1));
 		return cachedEntryCount;
-	}
-
-	@Override
-	protected ByteBuffer buffer() {
-		return intbuffer;
 	}
 	@Override
 	protected TreePointer self() {

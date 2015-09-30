@@ -1,6 +1,4 @@
 package persistence.data.models;
-import java.nio.ByteBuffer;
-
 import persistence.caching.PageEntry;
 import persistence.data.structures.MessageReferenceTable;
 import persistence.data.structures.TreePointer;
@@ -11,9 +9,7 @@ public class MRTWordEntry extends TreeEntry {
 	private static final short EOS_MASK = (short)0x8000;
 	private static final short MESSAGE_OFFSET_MASK = 0x7FFF;
 	private static final int NEXT_IND = HEADER_IND + Short.BYTES;
-	private static final short WORD_REF_IND = NEXT_IND + Integer.BYTES;
-	public static final int MIN_ENTRY_SIZE = WORD_REF_IND + Integer.BYTES;
-	private static ByteBuffer intbuffer = ByteBuffer.allocate(MIN_ENTRY_SIZE);
+	public static final int MIN_ENTRY_SIZE = NEXT_IND + Integer.BYTES;
 	public MRTWordEntry(PageEntry backingEntry) {
 		super(backingEntry);
 	}
@@ -51,21 +47,8 @@ public class MRTWordEntry extends TreeEntry {
 		putInt(next.rawValue(), NEXT_IND);
 	}
 	
-	public TreePointer word(){
-		return new TreePointer(getInt(WORD_REF_IND), WordTree.ENTRIES_PER_PAGE);
-	}
-
-	public void word(TreePointer word) {
-		putInt(word.rawValue(), WORD_REF_IND);
-	}
-	
 	@Override
 	public TreePointer self() {
 		return new TreePointer(pageID(), entryIndex(), MessageReferenceTable.ENTRIES_PER_PAGE);
-	}
-
-	@Override
-	protected ByteBuffer buffer() {
-		return intbuffer;
 	}
 }

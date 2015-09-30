@@ -1,6 +1,4 @@
 package persistence.data.models;
-import java.nio.ByteBuffer;
-
 import persistence.caching.PageEntry;
 import persistence.data.structures.FrequencyTable;
 import persistence.data.structures.TreePointer;
@@ -11,9 +9,9 @@ public class WordTreeEntry extends TreeEntry {
 	private static final int NEXT_IND = 1;
 	private static final int CHILD_IND = NEXT_IND + Integer.BYTES;
 	private static final int PARENT_IND = CHILD_IND + Integer.BYTES;
-	private static final int FIRST_FREQ_IND = PARENT_IND + Integer.BYTES;
+	private static final int CHILD_COUNT_IND = PARENT_IND + Integer.BYTES;
+	private static final int FIRST_FREQ_IND = CHILD_COUNT_IND + Integer.BYTES;
 	public static final int ENTRY_SIZE = FIRST_FREQ_IND + Integer.BYTES;
-	private static ByteBuffer intbuffer = ByteBuffer.allocate(ENTRY_SIZE);
 	
 	public WordTreeEntry(PageEntry backingEntry) {
 		super(backingEntry);
@@ -51,6 +49,14 @@ public class WordTreeEntry extends TreeEntry {
 		putInt(pointer.rawValue(), CHILD_IND);
 	}
 	
+	public int childCount(){
+		return getInt(CHILD_COUNT_IND);
+	}
+	
+	public void childCount(int count) {
+		putInt(count,  CHILD_COUNT_IND);
+	}
+	
 	public TreePointer parent() {
 		return new TreePointer(getInt(PARENT_IND), WordTree.ENTRIES_PER_PAGE);
 	}
@@ -79,11 +85,6 @@ public class WordTreeEntry extends TreeEntry {
 	@Override
 	public TreePointer self() {
 		return new TreePointer(pageID(), entryIndex(), WordTree.ENTRIES_PER_PAGE);
-	}
-
-	@Override
-	protected ByteBuffer buffer() {
-		return intbuffer;
 	}
 	
 }

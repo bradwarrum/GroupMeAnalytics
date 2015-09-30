@@ -1,8 +1,10 @@
 package persistence.data.structures;
 import java.nio.charset.Charset;
 
+import jdk.nashorn.internal.ir.annotations.Ignore;
 import persistence.caching.PageEntry;
 import persistence.data.models.WordTreeEntry;
+import persistence.data.models.WordTreeHeader;
 
 public class WordTree extends Tree {
 	private static int MAX_CACHED_PAGES = 512; //Minimum is 5 so far
@@ -10,8 +12,14 @@ public class WordTree extends Tree {
 	private static int ENTRY_SIZE = WordTreeEntry.ENTRY_SIZE;
 	public static int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
 		
+	private WordTreeHeader wordTreeHeader;
 	public WordTree(String mainFile, String rollbackFile) throws Exception {
 		super(mainFile, rollbackFile, MAX_CACHED_PAGES, PAGE_SIZE, ENTRY_SIZE);
+		if (header.pageCount() == 1 && header.finalPageEntryCount() == 1) {
+			wordTreeHeader = new WordTreeHeader(addEntry());
+		} else {
+			wordTreeHeader = new WordTreeHeader(getEntry(0, 1));
+		}
 	}
 	
 	private WordTreeEntry getWordTreeEntry(int pageID, int entryIndex) throws Exception {
@@ -47,7 +55,7 @@ public class WordTree extends Tree {
 		if (!word.matches("[a-zA-z\']+")) return null;
 		byte[] letters = word.toLowerCase().getBytes(Charset.forName("US-ASCII"));
 		// Get root node
-		TreePointer firstEntry 	= new TreePointer(header.firstEntry(), ENTRIES_PER_PAGE);
+		TreePointer firstEntry 	= wordTreeHeader.firstEntryInd();
 		WordTreeEntry parent  	= null;
 		WordTreeEntry current 	= getWordTreeEntry(firstEntry);
 		WordTreeEntry prev 	= null;
@@ -57,17 +65,19 @@ public class WordTree extends Tree {
 			if (current == null) {
 				current = addWordTreeEntry();
 				current.value(b);
+				current.childCount(1);
 				if (prev != null) {prev.next(current.self()); prev.close(); }
 				if (parent != null && prev == null) {parent.child(current.self());}
 				if (parent != null) { current.parent(parent.self()); parent.close(); }
 				else if (prev == null) {
-					header.firstEntry(current.self().rawValue());
+					wordTreeHeader.firstEntryInd(current.self());
 				}
 				parent = current;
 				current = null;
 				prev = null;
 			} else {
 				if (current.value() == b) {
+					current.childCount(current.childCount() + 1);
 					if (parent != null) {parent.close(); }
 					if (prev != null) {prev.close();}
 					parent = current;
@@ -81,13 +91,14 @@ public class WordTree extends Tree {
 				} else {
 					WordTreeEntry insert = addWordTreeEntry();
 					insert.value(b);
+					insert.childCount(1);
 					if (parent != null) {
 						insert.parent(parent.self());
 						if (prev == null) parent.child(insert.self());
 						parent.close();
 					} else {
 						if (prev == null) 
-							header.firstEntry(insert.self().rawValue());
+							wordTreeHeader.firstEntryInd(insert.self());
 					}
 					if (prev != null) {
 						prev.next(insert.self());
@@ -116,7 +127,7 @@ public class WordTree extends Tree {
 		word = sanitize(word);		
 		if (!word.matches("[a-zA-z\']+")) return null;
 		byte[] letters = word.toLowerCase().getBytes(Charset.forName("US-ASCII"));
-		TreePointer firstEntry = new TreePointer(header.firstEntry(), ENTRIES_PER_PAGE);
+		TreePointer firstEntry = wordTreeHeader.firstEntryInd();
 		WordTreeEntry current = getWordTreeEntry(firstEntry);
 		WordTreeEntry tmp;
 		int i = 0;

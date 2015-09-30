@@ -20,7 +20,7 @@ public abstract class Tree {
 			pageCache.truncateTo(0);
 			pageCache.createPage();
 			header = new TreeHeader(pageCache.entryAt(0, 0));
-			header.writeAll(1, (short)1, 0);
+			header.writeAll(1, (short)1);
 		} else {
 			//Keep page 0 in memory, always
 			header = new TreeHeader(pageCache.entryAt(0, 0));
