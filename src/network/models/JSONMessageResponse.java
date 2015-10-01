@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class JSONMessageResponse {
@@ -35,6 +36,8 @@ public class JSONMessageResponse {
 	public class JSONMeta {
 		@SerializedName("code")
 		public int status;
+		@Expose(serialize = false, deserialize = false)
+		public int actualStatus;		
 	}
 	
 	@SerializedName("meta")

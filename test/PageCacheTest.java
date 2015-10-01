@@ -1,4 +1,7 @@
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -6,9 +9,12 @@ import org.junit.Test;
 
 import com.sun.org.apache.xml.internal.serializer.utils.Messages;
 
+import core.GMAnalytics;
 import lang.handlers.CommandHandler;
 import lang.parsing.ChatProcessor;
 import lang.parsing.Command;
+import network.groupme.GroupMeConfig;
+import network.groupme.GroupMeRequester;
 import network.models.JSONMessageResponse;
 import persistence.FrequencySystem;
 import persistence.GMMessage;
@@ -64,7 +70,7 @@ public class PageCacheTest {
 		}
 	}
 	private static final String[] messages = new String[] {"Jarvis. Message count me boy", "Jarvis, message cnt", "jvaris message count", "jarvis message count", "jarvis message number 1", "jarvis, remember when #thathappened?"};
-	@Test
+	//@Test
 	public void chatProcessor() throws UnsupportedEncodingException {
 		JSONMessageResponse rsp = new JSONMessageResponse();
 		JSONMessageResponse.Message msg = rsp.new Message();
@@ -76,8 +82,17 @@ public class PageCacheTest {
 			msg.text = s;
 			System.out.println(proc.process(msg));
 		}
-
+	}
+	//@Test
+	public void GMMessages() throws IOException{
+		GroupMeConfig config = GroupMeConfig.fromConfigFile(new File("./data/gmconfig.txt"));
+		GroupMeRequester receiver = new GroupMeRequester(config);
+		JSONMessageResponse resp = receiver.getMessages("0");
+	}
 	
+	@Test
+	public void maintest() {
+		GMAnalytics.main(null);
 	}
 
 }

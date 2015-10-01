@@ -2,6 +2,8 @@ package lang.parsing;
 
 import java.io.UnsupportedEncodingException;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_OVERLAYPeer;
+
 public enum Command {
 	TOTAL_MESSAGES("message count", "count all messages"),
 	WRDCT_UNIQUE("unique count", "count unique words", "count all unique words", "unique word count", "unique wordcount"),
@@ -13,7 +15,9 @@ public enum Command {
 	MSG_BY_DATE("messages from", "messages on", "messages"),
 	MSG_TAG("tag", "save", "remember", "remember this as", "remember this as the time"),
 	MSG_RECALL("recall", "load", "remind me about", "remember when", "what happened", "what happened when"),
-	THIS_DAY_IN_HISTORY("this day in history");
+	THIS_DAY_IN_HISTORY("this day in history"),
+	SAY("say", "repeat after me"),
+	DEFINE("define", "urban dictionary", "dictionary");
 	
 	private final String[] commands;
 	private static TrieNode<TypeIndexPair> commandTree = null;

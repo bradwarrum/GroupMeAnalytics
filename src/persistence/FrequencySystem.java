@@ -20,20 +20,23 @@ public class FrequencySystem {
 		msgRefs = new MessageReferenceTable("./data/msgref", "./data/msgref.rbjf");
 	}
 	
-	private String sanitizeInput(String input) {
-		return input.replaceAll("[.,\"()?!*;:]", "");
+	private static String sanitizeInput(String input) {
+		return input.replaceAll("($|^|[\\s.,\"()?!*;:]){2,}", " ").trim().toLowerCase();
+	}
+	
+	public static void main(String[] args){
+		System.out.println(sanitizeInput("http://www.google.com  Mr. Bulldops    is the \tbest place. Bro...you gotta try it."));
 	}
 	
 	public void processMessage(GMMessage message) throws Exception {
+		if (message.message() == null) return;
 		String[] words = sanitizeInput(message.message()).split(" ");
 		
 		TreePointer lastMsgRef = null;
-		msgRefs.startMessage(message.messageID());
 		short wordIndex = 0;
 		for (String word : words) {
 			TreePointer wordTreeEntry = wordTree.mapWord(word);
 			if (wordTreeEntry == null) {
-				lastMsgRef = null;
 				continue;
 			}
 			TreePointer freqTableMaster = wordTree.getExternalPointer(wordTreeEntry);		
@@ -46,7 +49,8 @@ public class FrequencySystem {
 			TreePointer msgRefHead = freqTable.getExternalPointer(freqTableMember);
 			if (msgRefHead.rawValue() == 79) {
 				System.out.println("Debug");
-			}			
+			}
+			if (wordIndex == 0) msgRefs.startMessage(message.messageID());
 			msgRefHead = msgRefs.addWord(wordIndex, msgRefHead);
 			if (msgRefHead.rawValue() == 79) {
 				System.out.println("Debug");
@@ -54,10 +58,13 @@ public class FrequencySystem {
 			freqTable.setExternalPointer(freqTableMember, msgRefHead);
 			freqTable.setExternalPointer(freqTableMaster, msgRefHead);
 			lastMsgRef = msgRefHead;
+			if (lastMsgRef == null) {
+				System.out.println("Error");
+			}
 			
 			wordIndex++;
 		}
-		msgRefs.finishMessage(lastMsgRef);
+		if (wordIndex > 0)msgRefs.finishMessage(lastMsgRef);
 	}
 	public long getTotalWordCount() {
 		return freqTable.getTotalWordCount();

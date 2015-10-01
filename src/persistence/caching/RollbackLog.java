@@ -5,13 +5,19 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
+import core.Options;
+
 public class RollbackLog {
 	private final FileChannel channel;
 	private final int PAGE_SIZE;
 	private final ByteBuffer buffer;
 
 	public RollbackLog(String filePath, int pageSize) throws IOException {
-		channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+		if (Options.ROLLBACK_ENABLED) {
+			channel = FileChannel.open(Paths.get(filePath), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+		}else {
+			channel = null;
+		}
 		PAGE_SIZE = pageSize;
 		this.buffer = ByteBuffer.allocate(pageSize + 4);
 	}

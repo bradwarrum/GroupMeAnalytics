@@ -5,6 +5,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
+import core.Options;
+
 public class CacheFileHandler {
 	private final int PAGE_SIZE;
 	private final byte [] NULLDATA;
@@ -25,7 +27,7 @@ public class CacheFileHandler {
 	public void writePage(Page page) throws Exception {
 		if (PAGE_SIZE != page.size()) 							throw new IllegalArgumentException("Page size does not match for writeback");
 		if (page.getPageID() * PAGE_SIZE > channel.size())		throw new IllegalArgumentException("Page ID is out of range");
-		rollbackLog.copyPageFrom(channel, page.getPageID());
+		if (Options.ROLLBACK_ENABLED) rollbackLog.copyPageFrom(channel, page.getPageID());
 		
 		buffer.clear();
 		page.fill(buffer);
@@ -65,11 +67,11 @@ public class CacheFileHandler {
 	}
 	
 	public void rollback(int pageSize) throws Exception {
-		rollbackLog.rollback(channel);
+		if (Options.ROLLBACK_ENABLED) rollbackLog.rollback(channel);
 	}
 	
 	public void commit() throws Exception {
-		rollbackLog.commit();
+		if (Options.ROLLBACK_ENABLED) rollbackLog.commit();
 	}
 	
 	public int pageCount() throws IOException {
