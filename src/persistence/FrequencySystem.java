@@ -10,14 +10,23 @@ import persistence.data.structures.TreePointer;
 import persistence.data.structures.WordTree;
 
 public class FrequencySystem {
-	private final WordTree wordTree;
-	private final FrequencyTable freqTable;
-	private final MessageReferenceTable msgRefs;
+	private WordTree wordTree;
+	private FrequencyTable freqTable;
+	private MessageReferenceTable msgRefs;
 	
 	public FrequencySystem() throws Exception {
 		wordTree = new WordTree("./data/words", "./data/words.rbjf");
 		freqTable = new FrequencyTable("./data/freq", "./data/freq.rbjf");
 		msgRefs = new MessageReferenceTable("./data/msgref", "./data/msgref.rbjf");
+	}
+	
+	public void destroy() throws Exception{
+		wordTree.truncate();
+		freqTable.truncate();
+		msgRefs.truncate();
+		wordTree = new WordTree("./data/words", "./data/words.rbjf");
+		freqTable = new FrequencyTable("./data/freq", "./data/freq.rbjf");
+		msgRefs = new MessageReferenceTable("./data/msgref", "./data/msgref.rbjf");		
 	}
 	
 	private static String sanitizeInput(String input) {
@@ -47,14 +56,10 @@ public class FrequencySystem {
 
 			TreePointer freqTableMember = freqTable.incrementCount(message.memberID(), freqTableMaster);
 			TreePointer msgRefHead = freqTable.getExternalPointer(freqTableMember);
-			if (msgRefHead.rawValue() == 79) {
-				System.out.println("Debug");
-			}
+
 			if (wordIndex == 0) msgRefs.startMessage(message.messageID());
 			msgRefHead = msgRefs.addWord(wordIndex, msgRefHead);
-			if (msgRefHead.rawValue() == 79) {
-				System.out.println("Debug");
-			}
+			
 			freqTable.setExternalPointer(freqTableMember, msgRefHead);
 			freqTable.setExternalPointer(freqTableMaster, msgRefHead);
 			lastMsgRef = msgRefHead;

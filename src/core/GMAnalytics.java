@@ -2,6 +2,8 @@ package core;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Stack;
 
@@ -12,6 +14,7 @@ import lang.parsing.Command;
 import network.groupme.GroupMeConfig;
 import network.groupme.GroupMeRequester;
 import persistence.FrequencySystem;
+import persistence.MessageStorage;
 import persistence.SynchronizationSystem;
 import persistence.sql.HistoryDatabase;
 
@@ -61,9 +64,25 @@ public class GMAnalytics {
 		HistoryDatabase histdb = new HistoryDatabase();
 		System.out.println("History database successfully loaded");
 		
+		System.out.println("\nInitializing message backup...");
+		MessageStorage messageStorage = null;
+		try {
+			messageStorage = new MessageStorage(Paths.get("./data/messages/"));
+		} catch (IOException e) {
+			System.out.println("Could not load messages from main store");
+			System.exit(1);
+		}
+		System.out.println("Message backup successfully loaded");
+		
 		System.out.println("\nInitializing remote synchronization system...");
-		SynchronizationSystem syncSys = new SynchronizationSystem(new GroupMeRequester(configuration),frequencySystem,histdb);
-		syncSys.synchronize();
+		SynchronizationSystem syncSys = new SynchronizationSystem(new GroupMeRequester(configuration),frequencySystem, messageStorage, histdb);
+		try {
+			syncSys.synchronize(true);
+		} catch (Exception e) {
+			System.out.println("Synchronization failed");
+			e.printStackTrace();
+			System.exit(1);
+		}
 		
 		System.out.println("\nGROUP ME ANALYTICS SERVER - RUNNING\n");
 		

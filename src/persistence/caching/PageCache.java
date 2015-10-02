@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
+import org.omg.CORBA.INITIALIZE;
+
 public class PageCache implements OnWriteEventHandler {
 	private static Random rand = new Random(123);
 
@@ -107,6 +109,17 @@ public class PageCache implements OnWriteEventHandler {
 	public void truncateTo(int pageCount) throws IOException {
 		if (pageCount < maxFetchedPage) throw new IllegalArgumentException("Cannot clear a page that has been brought to the cache.");
 		cacheFile.truncateTo(pageCount);
+	}
+	
+	public void truncateToZero() throws IOException {
+		for(PageReference p : pageCache.values()) {
+			p.invalidate();
+		}
+		dirtyPages.clear();
+		pageCache.clear();
+		numMarkers = 0;
+		maxFetchedPage = -1;
+		cacheFile.truncateTo(0);
 	}
 
 	@Override

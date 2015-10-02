@@ -35,6 +35,11 @@ public class GroupMeRequester {
 			return null;
 		}
 	}
+	public static void correctSystemClassification(JSONMessageResponse.Message message) {
+		if (!message.system && (message.senderName.equals("GroupMe") || !message.senderType.equals("user"))) {
+			message.system = true;
+		}
+	}
 	public JSONMessageResponse getMessages(String afterID) throws IOException {
 		URL url = buildURL(API + "/groups/" + config.groupID + "/messages",
 				new Pair<String, String>("after_id", afterID),
@@ -54,6 +59,15 @@ public class GroupMeRequester {
 		resp.meta.actualStatus = connection.getResponseCode();
 		istream.close();
 		return resp;
-
+	}
+	
+	public JSONMessageResponse getMessagesFromString(String content) {
+		JSONMessageResponse resp =  GSON.fromJson(content,  JSONMessageResponse.class);
+		resp.meta.actualStatus = 200;
+		return resp;
+	}
+	
+	public String getStringFromMessages(JSONMessageResponse response) {
+		return GSON.toJson(response);
 	}
 }

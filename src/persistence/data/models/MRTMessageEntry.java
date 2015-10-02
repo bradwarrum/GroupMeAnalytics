@@ -7,8 +7,9 @@ import persistence.data.structures.TreePointer;
 public class MRTMessageEntry extends TreeEntry{
 	private static final int COUNT_IND = 0;
 	private static final int MESSAGE_ID_IND = COUNT_IND + Short.BYTES;
-	private static final short RESERVED_IND = MESSAGE_ID_IND + Integer.BYTES;
-	public static final int MIN_ENTRY_SIZE = RESERVED_IND + Integer.BYTES;
+	//private static final short RESERVED_IND = MESSAGE_ID_IND + Integer.BYTES;
+	//public static final int MIN_ENTRY_SIZE = RESERVED_IND + Integer.BYTES;
+	public static final int MIN_ENTRY_SIZE = MESSAGE_ID_IND + Integer.BYTES;	
 	
 	public MRTMessageEntry(PageEntry backingEntry) {
 		super(backingEntry);

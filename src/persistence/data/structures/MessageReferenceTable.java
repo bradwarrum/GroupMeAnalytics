@@ -1,9 +1,4 @@
 package persistence.data.structures;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.sun.org.apache.xml.internal.security.encryption.Reference;
-
 import persistence.caching.PageEntry;
 import persistence.data.models.MRTMessageEntry;
 import persistence.data.models.MRTWordEntry;
@@ -11,7 +6,7 @@ import persistence.data.models.MRTWordEntry;
 public class MessageReferenceTable extends Tree {
 	private static final int MAX_CACHED_PAGES = 1024;
 	private static final int PAGE_SIZE = 1024;
-	private static final int ENTRY_SIZE = MRTWordEntry.MIN_ENTRY_SIZE;
+	private static final int ENTRY_SIZE = Math.max(MRTWordEntry.MIN_ENTRY_SIZE, MRTMessageEntry.MIN_ENTRY_SIZE);
 	public static final int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
 	
 	public MessageReferenceTable(String mainFile, String rollbackFile) throws Exception {

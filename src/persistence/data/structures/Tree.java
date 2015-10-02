@@ -1,4 +1,6 @@
 package persistence.data.structures;
+import java.io.IOException;
+
 import persistence.caching.PageCache;
 import persistence.caching.PageEntry;
 import persistence.data.models.TreeHeader;
@@ -7,14 +9,23 @@ public abstract class Tree {
 	private final int PAGE_SIZE;
 	private final int ENTRY_SIZE;
 	private final int ENTRIES_PER_PAGE;
+	private final int MAX_CACHED_PAGES;
 	
-	protected final PageCache pageCache;
-	protected final TreeHeader header;
+	protected PageCache pageCache;
+	protected TreeHeader header;
+	protected final String MAINFILE, ROLLBACKFILE;
 	public Tree(String mainFile, String rollbackFile, int maxCachedPages, int pageSize, int entrySize) throws Exception {
 		PAGE_SIZE = pageSize;
 		ENTRY_SIZE = entrySize;
 		ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
-		pageCache = new PageCache(mainFile, rollbackFile, maxCachedPages, pageSize, entrySize);
+		MAX_CACHED_PAGES = maxCachedPages;
+		MAINFILE = mainFile;
+		ROLLBACKFILE = rollbackFile;
+		initialize();
+	}
+	
+	public void initialize() throws Exception{
+		pageCache = new PageCache(MAINFILE, ROLLBACKFILE, MAX_CACHED_PAGES, PAGE_SIZE, ENTRY_SIZE);
 		pageCache.rollback();
 		if (pageCache.numPages() == 0) {
 			pageCache.truncateTo(0);
@@ -68,5 +79,10 @@ public abstract class Tree {
 	
 	public void commit() throws Exception {
 		pageCache.commit();
+	}
+	
+	public void truncate() throws Exception {
+		pageCache.truncateToZero();
+		initialize();
 	}
 }
