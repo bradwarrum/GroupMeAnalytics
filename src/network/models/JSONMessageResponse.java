@@ -9,6 +9,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class JSONMessageResponse {
 	public class Message {
+		public class Attachment {
+			public String type;
+			public String url;
+			
+		}
 		@SerializedName("created_at")
 		public long timestamp;
 		@SerializedName("id")
@@ -27,6 +32,7 @@ public class JSONMessageResponse {
 		public String userID;
 		@SerializedName("avatar_url")
 		public String userAvatar;
+		public List<Attachment> attachments;
 	}
 	public class InternalWrapper {
 		public List<Message> messages;

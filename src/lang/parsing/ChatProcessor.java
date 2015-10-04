@@ -17,7 +17,7 @@ public class ChatProcessor {
 	}
 	
 	public Command process(Message message) throws UnsupportedEncodingException {
-		if (message.system || message.senderType != "user" || message.senderName.equals("GroupMe") || message.text == null)
+		if (message.system || message.text == null)
 			return null;
 		String msg = sanitizeInput(message.text);
 		String[] nameBody = msg.split(" ", 2);
@@ -28,9 +28,8 @@ public class ChatProcessor {
 			Command ctype = tip.type;
 			int commandLength = ctype.lengthOfCommandAt(tip.wordIndex);
 			String remainder = (commandLength>= nameBody[1].length() - 1) ? null : nameBody[1].substring(commandLength + 1);
-			System.out.println(remainder);
 			CommandHandler handler = handlers.get(ctype);
-			if (handler != null) handler.process(ctype, remainder);
+			if (handler != null) handler.process(ctype, message.senderID, remainder);
 			return ctype;
 		}
 		return null;

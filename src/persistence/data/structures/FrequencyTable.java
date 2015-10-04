@@ -10,7 +10,7 @@ import persistence.data.models.FrequencyTableHeader;
 
 public class FrequencyTable extends Tree {
 
-	private final static int MAX_CACHED_PAGES = 1024;
+	private final static int MAX_CACHED_PAGES = 256;
 	private final static int PAGE_SIZE = 1024;
 	private final static int ENTRY_SIZE = FrequencyTableEntry.MIN_ENTRY_SIZE;
 	public final static byte MASTER_MEMBER = (byte)0xFF;
@@ -118,7 +118,7 @@ public class FrequencyTable extends Tree {
 		return totalCount;
 	}
 	
-	public HashMap<Byte, Integer> getCounts(TreePointer masterRecord, HashSet<Byte>memberIDs) throws Exception {
+	public HashMap<Byte, Integer> getAllMemberCounts(TreePointer masterRecord) throws Exception {
 		
 		if (masterRecord == null || masterRecord.rawValue() == 0) throw new IllegalArgumentException("Pointer must not be null");
 		FrequencyTableEntry masterEntry = getFrequencyEntry(masterRecord);
@@ -127,20 +127,14 @@ public class FrequencyTable extends Tree {
 			masterEntry.close();
 			throw new Exception("Pointer does not correspond to a master record.");
 		}
-		HashMap<Byte, Integer> countMap = new HashMap<Byte, Integer>(memberIDs.size());
+		HashMap<Byte, Integer> countMap = new HashMap<Byte, Integer>();
 		FrequencyTableEntry entry = getFrequencyEntry(masterEntry.next());
 		while (entry != null) {
-			if (memberIDs.remove(entry.memberID())) {
-				countMap.put(entry.memberID(), entry.count());
-			}
+			countMap.put(entry.memberID(), entry.count());
 			FrequencyTableEntry next = getFrequencyEntry(entry.next());
 			entry.close();
 			entry = next;
 		}
-		for (byte b : memberIDs) {
-			countMap.put(b,  0);
-		}
-		memberIDs.clear();
 		masterEntry.close();
 		return countMap;
 		

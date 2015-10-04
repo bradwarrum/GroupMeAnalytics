@@ -19,6 +19,9 @@ public class PageCache implements OnWriteEventHandler {
 	private int[] markerMap;
 	private int numMarkers = 0;
 	private int maxFetchedPage = -1;
+	
+	private long evictions = 0;
+	private long accesses = 0;
 
 
 	public PageCache(String mainFile, String rollbackFile, int maxCachedPage, int pageSize, int entrySize) throws IOException {
@@ -48,7 +51,7 @@ public class PageCache implements OnWriteEventHandler {
 				if (markerInd != --numMarkers) {
 					markerMap[markerInd] = markerMap[numMarkers];
 				}
-				System.out.println("Cache miss, evicting page " + pageID);
+				evictions++;
 				return;
 			}
 			count++;
@@ -73,6 +76,7 @@ public class PageCache implements OnWriteEventHandler {
 
 	public PageEntry entryAt(int pageID, int entryIndex) throws Exception {
 		PageReference p = bring(pageID);
+		accesses++;
 		return new PageEntry(this, p,entryIndex ,ENTRY_SIZE);
 	}
 	
@@ -100,6 +104,7 @@ public class PageCache implements OnWriteEventHandler {
 		}
 		dirtyPages.clear();
 		cacheFile.commit();
+		System.out.println("Accesses: " + accesses + "\nEvictions: " + evictions + "\nPercentage: " + (double)evictions / accesses);
 	}
 	
 	public void rollback() throws Exception {

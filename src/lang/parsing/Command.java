@@ -5,19 +5,22 @@ import java.io.UnsupportedEncodingException;
 import com.sun.scenario.effect.impl.sw.sse.SSEBlend_OVERLAYPeer;
 
 public enum Command {
-	TOTAL_MESSAGES("message count", "count all messages"),
-	WRDCT_UNIQUE("unique count", "count unique words", "count all unique words", "unique word count", "unique wordcount"),
-	WRDCT_TOTAL("total count", "count all words", "total wordcount", "total word count"),
-	FREQ("count", "frequency of", "frequency for"),
-	FREQ_SIMILAR("count words like", "count like", "count similar", "count words similar to", "count words starting with", "count starting with"),
+	TOTAL_MESSAGES("message count", "count all messages", "total message count"),
+	WRDCT_UNIQUE("count unique words", "count all unique words", "unique word count", "unique wordcount"),
+	WRDCT_TOTAL("count all words", "total wordcount", "total word count"),
+	FREQ("frequency of", "frequency for"),
+	FREQ_SELF("how many times have i said", "number of times i said", "my frequency"),
+	FREQ_SIMILAR("count words like", "count like", "count words starting with", "count starting with"),
 	LOOKUP("find recent occurrences of", "find", "find last occurrence of", "find most recent occurrence of", "last message containing", "messages containing", "message containing"),
 	MSG_BY_ID("message number", "get message with id", "get message number", "message id", "id"),
-	MSG_BY_DATE("messages from", "messages on", "messages"),
+	MSG_BY_DATE("messages from", "messages on"),
 	MSG_TAG("tag", "save", "remember", "remember this as", "remember this as the time"),
-	MSG_RECALL("recall", "load", "remind me about", "remember when", "what happened", "what happened when"),
+	MSG_RECALL("recall", "load", "remind me about", "remember when", "what happened when"),
 	THIS_DAY_IN_HISTORY("this day in history"),
-	SAY("say", "repeat after me"),
-	DEFINE("define", "urban dictionary", "dictionary");
+	DEFINE("define", "urban dictionary", "dictionary", "what is"),
+	RANDOM_WORD("random word"),
+	RANDOM_MSG("random message"),
+	HELP("help");
 	
 	private final String[] commands;
 	private static TrieNode<TypeIndexPair> commandTree = null;

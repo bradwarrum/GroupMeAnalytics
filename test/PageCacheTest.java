@@ -91,7 +91,7 @@ public class PageCacheTest {
 	}
 	
 	@Test
-	public void maintest() {
+	public void maintest() throws IOException {
 		GMAnalytics.main(null);
 	}
 

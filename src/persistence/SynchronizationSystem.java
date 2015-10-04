@@ -7,6 +7,7 @@ import core.Options;
 import network.groupme.GroupMeRequester;
 import network.models.JSONMessageResponse;
 import persistence.sql.HistoryDatabase;
+import persistence.sql.MessageProcessingStats;
 
 public class SynchronizationSystem {
 	private final GroupMeRequester gmReq;
@@ -28,32 +29,43 @@ public class SynchronizationSystem {
 		String latestMessage = "0";
 		for (Enumeration<String> messages = messageStorage.getMessageHistory(); messages.hasMoreElements();) {
 			JSONMessageResponse resp = gmReq.getMessagesFromString(messages.nextElement());
-			totalProcessed += processMessageSet(resp);
+			totalProcessed += processMessageSet(resp).processed;
 			
 		}
 		System.out.println("Loaded " + totalProcessed + " messages from local storage");
 		return totalProcessed;
 	}
+	
 
-	private int processMessageSet(JSONMessageResponse response) {
+
+	private MessageProcessingStats processMessageSet(JSONMessageResponse response) {
 		int processed = 0;
+		int lastMessageID = 0;
+		String lastMessageGMID = "0";
+		byte lastUserID = (byte) 0xFF;
 		for (int i = 0; i < response.data.messages.size(); i++) {
 			JSONMessageResponse.Message respmsg = response.data.messages.get(i);
 			GroupMeRequester.correctSystemClassification(respmsg);
-			GMMessage msg = new GMMessage(respmsg.text, (byte)128, i);
 			try {
-				if (!respmsg.system)					
-					freqSystem.processMessage(msg);
-				history.processMessage(respmsg); 
+				MessageProcessingStats stats = history.processMessage(respmsg); 			
+				if (!respmsg.system) {
+					GMMessage msg = new GMMessage(respmsg.text, stats.lastUserID, stats.lastMessageID);	
+					freqSystem.processMessage(msg);					
+				}
+
+				if (stats.lastMessageID > lastMessageID) {
+					lastMessageID = stats.lastMessageID;
+					lastMessageGMID = stats.lastMessageGMID;
+					lastUserID = stats.lastUserID;
+				}
 			} catch (Exception e) {
 				System.out.println("Error processing message " + i + " of " + response.data.messages.size() + ":");
-				break;
+				System.exit(1);
 			}
 			processed++;			
 		}
 
-
-		return processed;
+		return new MessageProcessingStats(processed, lastMessageID, lastMessageGMID, lastUserID);
 	}
 
 
@@ -78,7 +90,10 @@ public class SynchronizationSystem {
 					}
 					//TODO: Get last message id so that we don't fetch duplicates
 					messageStorage.saveChunk(gmReq.getStringFromMessages(resp));
-					processed += processMessageSet(resp);
+					MessageProcessingStats stats = processMessageSet(resp);
+					processed += stats.processed;
+					latestMessage = stats.lastMessageGMID;
+					if (processed == 0) resp = null;
 				}
 
 			}catch (IOException e) {
@@ -86,7 +101,7 @@ public class SynchronizationSystem {
 			}
 			percentage = ((float)processed / remaining) * 100;
 			System.out.println("Percentage complete: " + String.format("%.2f", percentage) + "%");
-		} while (resp != null && resp.meta.actualStatus == 200 && (!Options.SINGULAR_FETCH || processed < 200));
+		} while (resp != null && resp.meta.actualStatus == 200 && (!Options.SINGULAR_FETCH));
 		if (resp == null) {
 			System.out.println("Error fetching remote information.  Processed a total of " + processed + " messages of approximately " + remaining + " before failing.");
 			System.out.println("The system is usable, but will not contain the most recently updated information.  Force a synchronization to attempt to retrieve new information.");

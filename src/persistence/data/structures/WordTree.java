@@ -7,7 +7,7 @@ import persistence.data.models.WordTreeEntry;
 import persistence.data.models.WordTreeHeader;
 
 public class WordTree extends Tree {
-	private static int MAX_CACHED_PAGES = 512; //Minimum is 5 so far
+	private static int MAX_CACHED_PAGES = 256; //Minimum is 5 so far
 	private static int PAGE_SIZE = 1024;
 	private static int ENTRY_SIZE = WordTreeEntry.ENTRY_SIZE;
 	public static int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;

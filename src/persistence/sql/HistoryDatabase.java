@@ -8,11 +8,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
+import com.google.gson.internal.bind.SqlDateTypeAdapter;
+
 import network.models.JSONMessageResponse.Message;
+import network.models.JSONMessageResponse.Message.Attachment;
 
 public class HistoryDatabase {
 
-	private class UserMapEntry {
+	public class UserMapEntry {
 		public final String username;
 		@SuppressWarnings("unused")
 		public final int internalID;
@@ -23,6 +26,7 @@ public class HistoryDatabase {
 	}
 	private final Connection conn;
 	private HashMap<String, UserMapEntry> UserIDMap = new HashMap<String, UserMapEntry>();
+	private HashMap<Integer, String> UsernameMap = new HashMap<Integer, String>(); 
 	private int nextUserID = 0;
 	private int nextMsgID = 0;
 	public HistoryDatabase() {
@@ -44,20 +48,20 @@ public class HistoryDatabase {
 			s.executeUpdate("CREATE TABLE IF NOT EXISTS Users " +
 					"(ID INTEGER PRIMARY KEY NOT NULL," +
 					"GMUserID VARCHAR(16) UNIQUE NOT NULL," +
-					"TotalMessages INTEGER NOT NULL," +
 					"CurrentAvatar VARCHAR(256)," +
 					"CurrentNickname VARCHAR(64) NOT NULL);");
 			s.executeUpdate("CREATE TABLE IF NOT EXISTS Messages " +
 					"(ID INTEGER PRIMARY KEY NOT NULL,"+
-					"GMID INTEGER NOT NULL,"+
+					"GMID INTEGER UNIQUE NOT NULL,"+
 					"Sender VARCHAR(16) NOT NULL ,"+
 					"IsSystem BOOLEAN NOT NULL," +
 					"Payload VARCHAR(1000),"+
+					"ImageURL VARCHAR(1000),"+
 					"SendTime BIGINT NOT NULL);");
-			s.executeUpdate("CREATE INDEX IF NOT EXISTS msgbytime ON Messages(SendTime);");			
+			s.executeUpdate("CREATE INDEX IF NOT EXISTS msgbytime ON Messages(SendTime);");
 			s.executeUpdate("CREATE TABLE IF NOT EXISTS Nicknames " +
 					"(ID INTEGER PRIMARY KEY NOT NULL," +
-					"UserID INTEGER NOT NULL REFERENCES Users(GMUserID)," +
+					"UserID INTEGER NOT NULL REFERENCES Users(ID)," +
 					"FirstMessage INTEGER NOT NULL REFERENCES Messages(ID)," +
 					"LastMessage INTEGER REFERENCES Messages(ID)," +
 					"Nickname VARCHAR(64) NOT NULL);");
@@ -77,6 +81,7 @@ public class HistoryDatabase {
 				int internalID = results.getInt(1);
 				String groupmeID = results.getString(2);
 				String nickname = results.getString(3);
+				UsernameMap.put(internalID, nickname);
 				UserIDMap.put(groupmeID, new UserMapEntry(nickname, internalID));
 			}
 			results.close();
@@ -153,18 +158,44 @@ public class HistoryDatabase {
 			throw new IllegalStateException("Database is all messed up");
 		}
 	}
+	
+	public UserMapEntry userFromID(String userGMID) {
+		return UserIDMap.get(userGMID);
+	}
+	
+	public String usernameFromInternalID(int internalID) {
+		return UsernameMap.get(internalID);
+	}
+	
 
-	public void processMessage(Message respmsg) {
+	public MessageProcessingStats processMessage(Message respmsg) {
+		byte userid = (byte) 0xFF;
 		if (!respmsg.system) {
 			UserMapEntry user = UserIDMap.get(respmsg.userID);
 			if (user == null || !user.username.equals(respmsg.senderName)) {
 				try {
-					PreparedStatement ps = conn.prepareStatement("INSERT OR REPLACE INTO Users (ID, GMUserID, TotalMessages, CurrentAvatar, CurrentNickname) VALUES (?, ?, ?, ?, ?);");
+					PreparedStatement ps = conn.prepareStatement("INSERT OR REPLACE INTO Users (ID, GMUserID, CurrentAvatar, CurrentNickname) VALUES (?, ?, ?, ?);");
 					ps.setInt(1, (user == null) ? nextUserID : user.internalID);
 					ps.setString(2, respmsg.senderID);
-					ps.setLong(3, 0);
-					ps.setString(4, respmsg.userAvatar);
-					ps.setString(5, respmsg.senderName);
+					ps.setString(3, respmsg.userAvatar);
+					ps.setString(4, respmsg.senderName);
+					if (0 == ps.executeUpdate()) {
+						throw new SQLException("Update failed for user insert");
+					}
+					ps.close();
+					if (user != null) {
+						ps = conn.prepareStatement("UPDATE Nicknames SET LastMessage=? WHERE (UserID=? AND LastMessage IS NULL);");
+						ps.setInt(1, nextMsgID);
+						ps.setInt(2, user.internalID);
+						if (1 != ps.executeUpdate()) {
+							throw new SQLException("Update failed for user insert");
+						}
+						ps.close();
+					}					
+					ps = conn.prepareStatement("INSERT INTO Nicknames (UserID, FirstMessage, Nickname) VALUES (?, ?, ?);");
+					ps.setInt(1, (user == null) ? nextUserID : user.internalID);
+					ps.setInt(2, nextMsgID);
+					ps.setString(3, respmsg.senderName);
 					if (0 == ps.executeUpdate()) {
 						throw new SQLException("Update failed for user insert");
 					}
@@ -174,19 +205,30 @@ public class HistoryDatabase {
 					e.printStackTrace();
 					throw new IllegalStateException("Database is all messed up");
 				}
+				UsernameMap.put(user == null ? nextUserID : user.internalID, respmsg.senderName);
 				user = new UserMapEntry(respmsg.senderName, user == null ? nextUserID++ : user.internalID);
+
 				UserIDMap.put(respmsg.userID, user);				
 			}
+			userid = (byte) user.internalID;			
 		}
 		try {
-			PreparedStatement ps = conn.prepareStatement("INSERT INTO Messages (ID, GMID, Sender, IsSystem, Payload, SendTime) " +
-														 "VALUES (?,?,?,?,?,?);");
+			String imageURL = null;
+			for (Attachment attachment : respmsg.attachments) {
+				if (attachment.type.equals("image")) {
+					imageURL = attachment.url;
+					break;
+				}
+			}
+			PreparedStatement ps = conn.prepareStatement("INSERT INTO Messages (ID, GMID, Sender, IsSystem, Payload, SendTime, ImageURL) " +
+					"VALUES (?,?,?,?,?,?,?);");
 			ps.setInt(1, nextMsgID);
 			ps.setString(2, respmsg.messageID);
 			ps.setString(3, respmsg.senderID);
 			ps.setBoolean(4, respmsg.system);
 			ps.setString(5, respmsg.text);
 			ps.setLong(6, respmsg.timestamp);
+			ps.setString(7, imageURL);
 			if (0 == ps.executeUpdate()) {
 				throw new SQLException("Message update failed");
 			}
@@ -196,7 +238,7 @@ public class HistoryDatabase {
 			e.printStackTrace();
 			throw new IllegalStateException("Database is all messed up");
 		}		
-		nextMsgID++;
+		return new MessageProcessingStats(1, nextMsgID++, respmsg.messageID, userid);
 
 	}
 }

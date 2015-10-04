@@ -87,13 +87,13 @@ public class FrequencySystem {
 		return freqTable.getTotalCount(freqPtr);
 	}
 	
-	public HashMap<Byte, Integer> getWordCounts(String word, HashSet<Byte> memberIDs) throws Exception {
+	public HashMap<Byte, Integer> getWordCountAllUsers(String word) throws Exception {
 		word = sanitizeInput(word);
 		TreePointer wordTreeEntry = wordTree.find(word);
 		if (wordTreeEntry == null) return null;
 		TreePointer freqPtr = wordTree.getExternalPointer(wordTreeEntry);
 		if (freqPtr == null) return null;
-		return freqTable.getCounts(freqPtr, memberIDs);
+		return freqTable.getAllMemberCounts(freqPtr);
 	}
 	
 	public int getWordCount(String word, byte memberID) throws Exception {
