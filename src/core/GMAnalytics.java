@@ -93,7 +93,7 @@ public class GMAnalytics {
 				
 		
 		ChatMessageQueue queue = new ChatMessageQueue();
-		Server server = new Server(queue);
+		Server server = new Server(queue, configuration.botName, histdb);
 		server.start();
 		System.out.println("\nGROUP ME ANALYTICS SERVER - RUNNING\n");
 		

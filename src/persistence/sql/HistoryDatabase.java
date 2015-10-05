@@ -5,11 +5,18 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLType;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.HashMap;
 
 import com.google.gson.internal.bind.SqlDateTypeAdapter;
+import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
 
+import core.DateUtils;
+import freemarker.template.utility.DateUtil;
+import network.models.FTLMessage;
+import network.models.FTLMessages;
 import network.models.JSONMessageResponse.Message;
 import network.models.JSONMessageResponse.Message.Attachment;
 
@@ -50,10 +57,11 @@ public class HistoryDatabase {
 					"GMUserID VARCHAR(16) UNIQUE NOT NULL," +
 					"CurrentAvatar VARCHAR(256)," +
 					"CurrentNickname VARCHAR(64) NOT NULL);");
+			s.executeUpdate("INSERT OR IGNORE INTO Users (ID, GMUserID, CurrentAvatar, CurrentNickname) VALUES(-1, 'system', NULL, 'GroupMe');");
 			s.executeUpdate("CREATE TABLE IF NOT EXISTS Messages " +
 					"(ID INTEGER PRIMARY KEY NOT NULL,"+
 					"GMID INTEGER UNIQUE NOT NULL,"+
-					"Sender VARCHAR(16) NOT NULL ,"+
+					"Sender INTEGER NOT NULL REFERENCES Users(ID),"+
 					"IsSystem BOOLEAN NOT NULL," +
 					"Payload VARCHAR(1000),"+
 					"ImageURL VARCHAR(1000),"+
@@ -88,6 +96,7 @@ public class HistoryDatabase {
 			results = s.executeQuery("SELECT MAX(ID) FROM Users;");
 			if (results.next()) {
 				nextUserID = results.getInt(1) + 1;
+				if (nextUserID == 0) nextUserID = 1;
 			} else {
 				nextUserID = 1;
 			}
@@ -158,15 +167,15 @@ public class HistoryDatabase {
 			throw new IllegalStateException("Database is all messed up");
 		}
 	}
-	
+
 	public UserMapEntry userFromID(String userGMID) {
 		return UserIDMap.get(userGMID);
 	}
-	
+
 	public String usernameFromInternalID(int internalID) {
 		return UsernameMap.get(internalID);
 	}
-	
+
 
 	public MessageProcessingStats processMessage(Message respmsg) {
 		byte userid = (byte) 0xFF;
@@ -224,7 +233,7 @@ public class HistoryDatabase {
 					"VALUES (?,?,?,?,?,?,?);");
 			ps.setInt(1, nextMsgID);
 			ps.setString(2, respmsg.messageID);
-			ps.setString(3, respmsg.senderID);
+			ps.setByte(3, userid);
 			ps.setBoolean(4, respmsg.system);
 			ps.setString(5, respmsg.text);
 			ps.setLong(6, respmsg.timestamp);
@@ -239,6 +248,35 @@ public class HistoryDatabase {
 			throw new IllegalStateException("Database is all messed up");
 		}		
 		return new MessageProcessingStats(1, nextMsgID++, respmsg.messageID, userid);
+
+	}
+
+	public FTLMessages getMessages(int targetInternalID, int contextCount) {
+		PreparedStatement ps;
+		try {
+			ps = conn.prepareStatement("SELECT M.ID, M.Sender, M.IsSystem, M.Payload, M.ImageURL, M.SendTime, U.CurrentAvatar, U.CurrentNickname " +
+					"FROM Messages AS M INNER JOIN Users AS U ON (M.Sender=U.ID) WHERE (M.ID > ? AND M.ID < ?) ORDER BY M.ID;");
+			ps.setInt(1, targetInternalID - contextCount / 2);
+			ps.setInt(2, targetInternalID + contextCount / 2);
+			ResultSet results = ps.executeQuery();
+			if (results == null) return null;
+			FTLMessages messages = new FTLMessages();
+			while (results.next()) {
+				FTLMessage message = new FTLMessage(results.getString(8), 
+													results.getString(7), 
+													DateUtils.getChatTimestamp(results.getLong(6)), 
+													results.getString(4).replace("\n", "<br/>"), 
+													results.getString(5),
+													results.getInt(1));
+				messages.addMessage(message);
+			}
+			results.close();
+			ps.close();
+			return messages;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}		
 
 	}
 }

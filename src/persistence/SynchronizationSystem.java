@@ -30,12 +30,12 @@ public class SynchronizationSystem {
 		for (Enumeration<String> messages = messageStorage.getMessageHistory(); messages.hasMoreElements();) {
 			JSONMessageResponse resp = gmReq.getMessagesFromString(messages.nextElement());
 			totalProcessed += processMessageSet(resp).processed;
-			
+
 		}
 		System.out.println("Loaded " + totalProcessed + " messages from local storage");
 		return totalProcessed;
 	}
-	
+
 
 
 	private MessageProcessingStats processMessageSet(JSONMessageResponse response) {
@@ -85,31 +85,30 @@ public class SynchronizationSystem {
 				if (resp.meta.actualStatus == 200) {
 					if (remaining < 0) {
 						remaining = resp.data.count - currMessageCount;
-						System.out.println("Downloading " + remaining + " messages from the server...");
-						System.out.println("Percentage complete: " + percentage + "%");
+						if (remaining > 0){
+							System.out.println("Downloading " + remaining + " messages from the server...");
+							System.out.println("Percentage complete: " + percentage + "%");
+						}
 					}
 					//TODO: Get last message id so that we don't fetch duplicates
 					messageStorage.saveChunk(gmReq.getStringFromMessages(resp));
 					MessageProcessingStats stats = processMessageSet(resp);
 					processed += stats.processed;
 					latestMessage = stats.lastMessageGMID;
-					if (processed == 0) resp = null;
+					if (processed == 0) {
+						resp = null;
+					} else {
+						percentage = ((float)processed / remaining) * 100;
+						System.out.println("Percentage complete: " + String.format("%.2f", percentage) + "%");						
+					}
 				}
 
 			}catch (IOException e) {
 				resp = null;
 			}
-			percentage = ((float)processed / remaining) * 100;
-			System.out.println("Percentage complete: " + String.format("%.2f", percentage) + "%");
+
 		} while (resp != null && resp.meta.actualStatus == 200 && (!Options.SINGULAR_FETCH));
-		if (resp == null) {
-			System.out.println("Error fetching remote information.  Processed a total of " + processed + " messages of approximately " + remaining + " before failing.");
-			System.out.println("The system is usable, but will not contain the most recently updated information.  Force a synchronization to attempt to retrieve new information.");
-		}
 		freqSystem.commit();
-		System.out.println(freqSystem.getTotalWordCount("click"));
-		System.out.println(freqSystem.getTotalWordCount("top"));
-		System.out.println(freqSystem.getTotalWordCount("the"));
 
 	}
 }
