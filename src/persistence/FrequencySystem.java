@@ -30,7 +30,7 @@ public class FrequencySystem {
 	}
 	
 	private static String sanitizeInput(String input) {
-		return input.replaceAll("($|^|[\\s.,\"()?!*;:]){2,}", " ").trim().toLowerCase();
+		return input.replaceAll("($|^|[\\s.,\"()?!*;:@#]){2,}", " ").trim().toLowerCase();
 	}
 	
 	public static void main(String[] args){

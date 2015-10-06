@@ -10,6 +10,7 @@ import lang.handlers.CommandHandler;
 import lang.handlers.DefinitionHandler;
 import lang.handlers.FrequencyHandler;
 import lang.handlers.MetadataHandler;
+import lang.handlers.PingHandler;
 import lang.parsing.ChatProcessor;
 import lang.parsing.Command;
 import network.groupme.GroupMeConfig;
@@ -78,6 +79,7 @@ public class GMAnalytics {
 		handlerStack.push(new MetadataHandler(frequencySystem, histdb, requester));
 		handlerStack.push(new FrequencyHandler(frequencySystem, histdb, requester));
 		handlerStack.push(new DefinitionHandler(requester));
+		handlerStack.push(new PingHandler(requester));
 		
 		for (CommandHandler handler : handlerStack) {
 			System.out.println("Loading " + handler.getHandlerName());				

@@ -4,13 +4,14 @@ import java.util.HashSet;
 
 import com.sun.jndi.ldap.EntryChangeResponseControl;
 
+import core.Options;
 import persistence.caching.PageEntry;
 import persistence.data.models.FrequencyTableEntry;
 import persistence.data.models.FrequencyTableHeader;
 
 public class FrequencyTable extends Tree {
 
-	private final static int MAX_CACHED_PAGES = 256;
+	private final static int MAX_CACHED_PAGES = Options.SHARED_MAX_CACHE;
 	private final static int PAGE_SIZE = 1024;
 	private final static int ENTRY_SIZE = FrequencyTableEntry.MIN_ENTRY_SIZE;
 	public final static byte MASTER_MEMBER = (byte)0xFF;

@@ -102,9 +102,9 @@ public class PageCache implements OnWriteEventHandler {
 			if (p == null) throw new AssertionError("What the hell is going on?");
 			cacheFile.writePage(p);
 		}
+		//System.out.println("Accesses: " + accesses + "\nEvictions: " + evictions + "\nPercentage: " + (double)evictions / accesses+ "\nDirty: " + dirtyPages.size());		
 		dirtyPages.clear();
 		cacheFile.commit();
-		System.out.println("Accesses: " + accesses + "\nEvictions: " + evictions + "\nPercentage: " + (double)evictions / accesses);
 	}
 	
 	public void rollback() throws Exception {

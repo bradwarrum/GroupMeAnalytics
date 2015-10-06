@@ -64,9 +64,9 @@ public class PageEntry {
 		return parent.getPage().readData((ENTRY_INDEX * ENTRY_SIZE) + entryOffset);
 	}
 	
-	@Override
+	/*@Override
 	protected void finalize() {
 		close();
-	}
+	}*/
 
 }

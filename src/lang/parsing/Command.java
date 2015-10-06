@@ -20,7 +20,8 @@ public enum Command {
 	DEFINE("define", "urban dictionary", "dictionary", "what is"),
 	RANDOM_WORD("random word"),
 	RANDOM_MSG("random message"),
-	HELP("help");
+	HELP("help"),
+	PING("are you there", "can you hear me", "hello", "you there", "are you ok", "you good");
 	
 	private final String[] commands;
 	private static TrieNode<TypeIndexPair> commandTree = null;

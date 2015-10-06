@@ -138,8 +138,6 @@ public class GroupMeRequester {
 				if (read > 0) {
 					request.append(new String(chunk, 0, read));
 					ofs += read;
-					//Cut off chunking at 20KB
-					if (ofs > 20000) return "";
 				}
 			}while (read>=0);
 		}catch (IOException e) {

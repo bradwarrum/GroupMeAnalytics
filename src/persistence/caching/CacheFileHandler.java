@@ -71,6 +71,7 @@ public class CacheFileHandler {
 	}
 	
 	public void commit() throws Exception {
+		channel.force(false);
 		if (Options.ROLLBACK_ENABLED) rollbackLog.commit();
 	}
 	

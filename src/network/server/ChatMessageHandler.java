@@ -47,7 +47,7 @@ public class ChatMessageHandler implements HttpHandler {
 					//Cut off chunking at 20KB
 					if (ofs > 20000) return "";
 				}
-			}while (read == 512);
+			}while (read>=0);
 		}catch (IOException e) {
 			System.out.println("WARNING: REQUEST BUFFER FAILURE");
 			return "";

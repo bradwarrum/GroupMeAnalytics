@@ -128,6 +128,7 @@ public class HistoryDatabase {
 			initialize();
 			cacheHighFreqInfo();
 			s.close();
+			conn.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new IllegalStateException("Database is all messed up");
@@ -242,13 +243,16 @@ public class HistoryDatabase {
 				throw new SQLException("Message update failed");
 			}
 			ps.close();
-			conn.commit();
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new IllegalStateException("Database is all messed up");
 		}		
 		return new MessageProcessingStats(1, nextMsgID++, respmsg.messageID, userid);
 
+	}
+	
+	public void commit() throws SQLException{
+		conn.commit();
 	}
 
 	public FTLMessages getMessages(int targetInternalID, int contextCount) {

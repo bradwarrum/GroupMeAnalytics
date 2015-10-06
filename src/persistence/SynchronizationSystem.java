@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import core.Options;
 import network.groupme.GroupMeRequester;
 import network.models.JSONMessageResponse;
+import network.models.JSONMessageResponse.Message;
 import persistence.sql.HistoryDatabase;
 import persistence.sql.MessageProcessingStats;
 
@@ -21,24 +22,40 @@ public class SynchronizationSystem {
 		this.messageStorage = messageStorage;
 	}
 
-	private int relink() throws Exception {
+	private String relink() throws Exception {
 		System.out.println("Removing word associations and linkages...");
 		freqSystem.destroy();
 		history.drop();
 		int totalProcessed = 0;
 		String latestMessage = "0";
+		int iteration = 0;
 		for (Enumeration<String> messages = messageStorage.getMessageHistory(); messages.hasMoreElements();) {
 			JSONMessageResponse resp = gmReq.getMessagesFromString(messages.nextElement());
-			totalProcessed += processMessageSet(resp).processed;
+			try {
+				totalProcessed += processMessageSet(resp).processed;
+			}catch (Exception e) {
+				System.out.println("Error occurred while processing message set " + iteration);
+			}
+			if (resp.data.messages.size() > 0) {
+				Message finalMessage = resp.data.messages.get(resp.data.messages.size() - 1);
 
+				if (finalMessage.messageID.compareTo(latestMessage) > 0) {
+					latestMessage = finalMessage.messageID;
+				}
+			} else {
+				break;
+			}
+			iteration++;
 		}
+		freqSystem.commit();
+		history.commit();
 		System.out.println("Loaded " + totalProcessed + " messages from local storage");
-		return totalProcessed;
+		return latestMessage;
 	}
 
 
 
-	private MessageProcessingStats processMessageSet(JSONMessageResponse response) {
+	private MessageProcessingStats processMessageSet(JSONMessageResponse response) throws Exception {
 		int processed = 0;
 		int lastMessageID = 0;
 		String lastMessageGMID = "0";
@@ -49,7 +66,7 @@ public class SynchronizationSystem {
 			try {
 				MessageProcessingStats stats = history.processMessage(respmsg); 			
 				if (!respmsg.system) {
-					GMMessage msg = new GMMessage(respmsg.text, stats.lastUserID, stats.lastMessageID);	
+					GMMessage msg = new GMMessage(respmsg.text, stats.lastUserID, stats.lastMessageID);				
 					freqSystem.processMessage(msg);					
 				}
 
@@ -60,7 +77,7 @@ public class SynchronizationSystem {
 				}
 			} catch (Exception e) {
 				System.out.println("Error processing message " + i + " of " + response.data.messages.size() + ":");
-				System.exit(1);
+				throw e;
 			}
 			processed++;			
 		}
@@ -71,8 +88,8 @@ public class SynchronizationSystem {
 
 	@SuppressWarnings("unused")
 	public void synchronize(boolean relink) throws Exception {
-		if (relink) relink();
-		String latestMessage = history.latestMessageID();
+		String latestMessage = relink ? relink() : history.latestMessageID();
+		if (!Options.FETCH_NEW) return;		
 		int currMessageCount = history.totalNumMessages();
 		int remaining = -1;
 		int processed = 0;
@@ -81,34 +98,31 @@ public class SynchronizationSystem {
 		do {
 			try {
 				resp = gmReq.getMessages(latestMessage);
-
-				if (resp.meta.actualStatus == 200) {
+				
+				if (resp != null && resp.data.messages.size() > 0) {
 					if (remaining < 0) {
 						remaining = resp.data.count - currMessageCount;
-						if (remaining > 0){
-							System.out.println("Downloading " + remaining + " messages from the server...");
-							System.out.println("Percentage complete: " + percentage + "%");
-						}
+						System.out.println("Retrieving " + remaining + " messages from server");
 					}
-					//TODO: Get last message id so that we don't fetch duplicates
+					if (remaining > 0) System.out.println("Percentage : " + String.format("%.2f", (double)processed / remaining * 100.0 ));
+						
+					
 					messageStorage.saveChunk(gmReq.getStringFromMessages(resp));
 					MessageProcessingStats stats = processMessageSet(resp);
 					processed += stats.processed;
 					latestMessage = stats.lastMessageGMID;
-					if (processed == 0) {
-						resp = null;
-					} else {
-						percentage = ((float)processed / remaining) * 100;
-						System.out.println("Percentage complete: " + String.format("%.2f", percentage) + "%");						
-					}
+				}else{
+					resp = null;
 				}
 
 			}catch (IOException e) {
 				resp = null;
 			}
 
-		} while (resp != null && resp.meta.actualStatus == 200 && (!Options.SINGULAR_FETCH));
+		} while (resp != null);
 		freqSystem.commit();
+		history.commit();
 
 	}
+
 }

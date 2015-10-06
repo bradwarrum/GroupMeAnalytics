@@ -1,10 +1,11 @@
 package persistence.data.structures;
+import core.Options;
 import persistence.caching.PageEntry;
 import persistence.data.models.MRTMessageEntry;
 import persistence.data.models.MRTWordEntry;
 
 public class MessageReferenceTable extends Tree {
-	private static final int MAX_CACHED_PAGES = 256;
+	private static final int MAX_CACHED_PAGES = Options.SHARED_MAX_CACHE;
 	private static final int PAGE_SIZE = 1024;
 	private static final int ENTRY_SIZE = Math.max(MRTWordEntry.MIN_ENTRY_SIZE, MRTMessageEntry.MIN_ENTRY_SIZE);
 	public static final int ENTRIES_PER_PAGE = PAGE_SIZE / ENTRY_SIZE;
