@@ -1,10 +1,5 @@
 package lang.parsing;
 
-import java.io.UnsupportedEncodingException;
-
-import com.sun.corba.se.impl.naming.pcosnaming.PersistentBindingIterator;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.Header;
-
 public class TrieNode<T> {
 	private TrieNode<T> next = null;
 	private TrieNode<T> child = null;

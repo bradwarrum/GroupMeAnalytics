@@ -5,16 +5,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLType;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.HashMap;
 
-import com.google.gson.internal.bind.SqlDateTypeAdapter;
-import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
-
 import core.DateUtils;
-import freemarker.template.utility.DateUtil;
 import network.models.FTLMessage;
 import network.models.FTLMessages;
 import network.models.JSONMessageResponse.Message;
