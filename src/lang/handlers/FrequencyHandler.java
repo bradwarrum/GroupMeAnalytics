@@ -1,6 +1,10 @@
 package lang.handlers;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,38 +35,43 @@ public class FrequencyHandler implements CommandHandler {
 		Matcher matcher = wordExtractor.matcher(extra);
 		if (!matcher.find()) return;
 		String phrase = matcher.group(1).trim();
-		if (phrase.contains(" ")) {
-			sender.send("Sorry, but I can't find frequency data for multi-word phrases. I should be able to search for the first occurrence of a phrase, though, so try that.");
-			return;
-		}
+
 		switch (cmd) {
 		case FREQ:
 			HashMap<Byte, Integer> counts;
-			int totalcount;
+			int totalcount = 0;
 			try {
-				totalcount = frequencySystem.getTotalWordCount(phrase);
-				counts = frequencySystem.getWordCountAllUsers(phrase);
+				//totalcount = frequencySystem.getTotalWordCount(phrase);
+				counts = frequencySystem.getPhraseCountAllUsers(phrase);
 			} catch (Exception e) {
 				e.printStackTrace();
 				return;
 			}
-			if (totalcount == 0) {
-				sender.send("By my account, the word \"" + phrase + "\" has never been said in this group.");
-				return;
+			if (counts.entrySet().size() == 0) {
+				sender.send("By my account, the phrase \"" + phrase + "\" has never been said in this group.");
+			} else {
+				List<Entry<Byte, Integer>> sortedList = new LinkedList<Entry<Byte, Integer>>(counts.entrySet());
+				Collections.sort(sortedList, new Comparator<Entry<Byte, Integer>>() {
+
+					@Override
+					public int compare(Entry<Byte, Integer> o1, Entry<Byte, Integer> o2) {
+						return o1.getValue().compareTo(o2.getValue());
+					}
+					
+				});
+				
+				for (Entry<Byte, Integer> entry : sortedList) {
+					totalcount += entry.getValue();
+				}
+				String response = "The phrase \"" + phrase + "\" has been said " + totalcount + " times in this group.\n\nFrequency by user:\n";
+				for (Entry<Byte, Integer> entry : sortedList) {
+					String username = historyDB.usernameFromInternalID(entry.getKey());
+					if (username == null) continue;
+					response += username + " : " + entry.getValue() + " (" + String.format("%.2f", (float)entry.getValue() / totalcount * 100.0) + "%)\n";
+				}
+				sender.send(response);				
 			}
-			try {
-				counts = frequencySystem.getWordCountAllUsers(phrase);
-			} catch (Exception e) {
-				e.printStackTrace();
-				return;
-			}
-			String response = "The word \"" + phrase + "\" has been said " + totalcount + " times in this group.\n\nFrequency by user:\n";
-			for (Entry<Byte, Integer> entry : counts.entrySet()) {
-				String username = historyDB.usernameFromInternalID(entry.getKey());
-				if (username == null) continue;
-				response += username + " : " + entry.getValue() + " (" + String.format("%.2f", (float)entry.getValue() / totalcount * 100.0) + "%)\n";
-			}
-			sender.send(response);
+
 			break;
 		case FREQ_SELF:
 			UserMapEntry user = historyDB.userFromID(senderID);

@@ -41,8 +41,6 @@ public class FrequencySystem {
 		if (message.message() == null) return;
 		String[] words = sanitizeInput(message.message()).split(" ");
 		
-		TreePointer lastMsgRef = null;
-		short wordIndex = 0;
 		for (String word : words) {
 			TreePointer wordTreeEntry = wordTree.mapWord(word);
 			if (wordTreeEntry == null) {
@@ -55,21 +53,13 @@ public class FrequencySystem {
 			}
 
 			TreePointer freqTableMember = freqTable.incrementCount(message.memberID(), freqTableMaster);
-			TreePointer msgRefHead = freqTable.getExternalPointer(freqTableMember);
+			TreePointer msgRefHead = freqTable.getExternalPointer(freqTableMaster);
 
-			if (wordIndex == 0) msgRefs.startMessage(message.messageID());
-			msgRefHead = msgRefs.addWord(wordIndex, msgRefHead);
+			msgRefHead = msgRefs.addWord(message.messageID(), message.memberID(), msgRefHead);
 			
-			freqTable.setExternalPointer(freqTableMember, msgRefHead);
+			//freqTable.setExternalPointer(freqTableMember, msgRefHead);
 			freqTable.setExternalPointer(freqTableMaster, msgRefHead);
-			lastMsgRef = msgRefHead;
-			if (lastMsgRef == null) {
-				System.out.println("Error");
-			}
-			
-			wordIndex++;
 		}
-		if (wordIndex > 0)msgRefs.finishMessage(lastMsgRef);
 	}
 	public long getTotalWordCount() {
 		return freqTable.getTotalWordCount();
@@ -87,9 +77,15 @@ public class FrequencySystem {
 		return freqTable.getTotalCount(freqPtr);
 	}
 	
-	public HashMap<Byte, Integer> getWordCountAllUsers(String word) throws Exception {
-		word = sanitizeInput(word);
-		TreePointer wordTreeEntry = wordTree.find(word);
+	public HashMap<Byte, Integer> getPhraseCountAllUsers(String phrase) throws Exception {
+		phrase = sanitizeInput(phrase);
+		if (phrase.contains(" ")) {
+			String[] words = phrase.split(" ");
+			if (words.length > 5) return null;
+			return getPhraseCountAllUsers(words);
+		}
+		
+		TreePointer wordTreeEntry = wordTree.find(phrase);
 		if (wordTreeEntry == null) return null;
 		TreePointer freqPtr = wordTree.getExternalPointer(wordTreeEntry);
 		if (freqPtr == null) return null;
@@ -104,35 +100,24 @@ public class FrequencySystem {
 		if (freqPtr == null) return 0;
 		return freqTable.getCount(freqPtr, memberID);
 	}
-	/*
-	public void getOccurrences(String phrase, int maxCount, List<Integer> messageIDs) throws Exception {
-		String[] words = phrase.replaceAll("[.,\"()?!*;:]", "").split(" ");
-		List<Integer> occurrences = new ArrayList<Integer>(); 
-		if (words.length == 0) {
-			return;
+
+	private TreePointer getMessageRefEntry(String word) throws Exception {
+		TreePointer wordTreeEntry = wordTree.find(word);
+		if (wordTreeEntry == null) return null;
+		TreePointer freqEntry = wordTree.getExternalPointer(wordTreeEntry);
+		if (freqEntry == null) return null;
+		TreePointer msgRefEntry = freqTable.getExternalPointer(freqEntry);
+		return msgRefEntry;
+	}
+	
+	private HashMap<Byte, Integer> getPhraseCountAllUsers(String[] words) throws Exception {
+		TreePointer[] messageRefHeads = new TreePointer[words.length];
+		for (int i = 0; i < words.length; i++) {
+			messageRefHeads[i] = getMessageRefEntry(words[i]);
+			if (messageRefHeads[i] == null) return null;
 		}
-		if (words.length > 5) {
-			return;
-		}
-		TreePointer wordTreeEntry = wordTree.find(words[0]);
-		if (wordTreeEntry == null) return;
-		TreePointer masterPtr = wordTree.getExternalPointer(wordTreeEntry);
-		if (masterPtr == null) return;
-		
-		List<ReferencePair> references = new ArrayList<ReferencePair>();
-		TreePointer continuationPtr = msgRefs.getReferences(freqTable.getExternalPointer(masterPtr), maxCount, references); 
-		if (words.length == 1) {
-			for (ReferencePair pair : references) {
-				messageIDs.add(pair.messageID);
-			}
-		} else {
-			for (ReferencePair pair : references) {
-				for (int i = 1; i < words.length; i++) {
-					
-				}
-			}
-		}
-	}*/
+		return msgRefs.findFrequencyForSequence(messageRefHeads);
+	}
 	
 	public void commit() throws Exception {
 		//TODO: Make this atomic
