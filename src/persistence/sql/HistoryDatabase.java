@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
+import com.sun.corba.se.spi.orbutil.fsm.State;
+
 import core.DateUtils;
 import network.models.FTLMessage;
 import network.models.FTLMessages;
@@ -157,6 +159,25 @@ public class HistoryDatabase {
 			results.close();
 			s.close();
 			return totalMessages;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new IllegalStateException("Database is all messed up");
+		} 
+	}
+	
+	public String translateToGMID (int messageID) {
+		String translation = "0";
+		try {
+			Statement s = conn.createStatement();
+			ResultSet results = s.executeQuery("SELECT (GMID) FROM Messages WHERE (ID=" + messageID + ");");
+			if (results.next()) {
+				translation = results.getString(1);
+				if (translation == null) translation = "0";
+			}
+			
+			results.close();
+			s.close();
+			return translation;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			throw new IllegalStateException("Database is all messed up");

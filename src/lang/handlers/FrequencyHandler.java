@@ -9,6 +9,8 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
+
 import lang.parsing.Command;
 import network.groupme.GroupMeRequester;
 import persistence.FrequencySystem;
@@ -47,7 +49,7 @@ public class FrequencyHandler implements CommandHandler {
 				e.printStackTrace();
 				return;
 			}
-			if (counts.entrySet().size() == 0) {
+			if (counts == null || counts.entrySet().size() == 0) {
 				sender.send("By my account, the phrase \"" + phrase + "\" has never been said in this group.");
 			} else {
 				List<Entry<Byte, Integer>> sortedList = new LinkedList<Entry<Byte, Integer>>(counts.entrySet());

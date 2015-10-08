@@ -68,7 +68,7 @@ public class GroupMeRequester {
 		return resp;
 	}
 
-	public JSONMessageResponse getMessagesFromString(String content) {
+	public static JSONMessageResponse getMessagesFromString(String content) {
 		JSONMessageResponse resp =  GSON.fromJson(content,  JSONMessageResponse.class);
 		resp.meta.actualStatus = 200;
 		return resp;
@@ -78,8 +78,8 @@ public class GroupMeRequester {
 		JSONMessageResponse.Message msg = GSON.fromJson(content, JSONMessageResponse.Message.class);
 		return msg;
 	}
-
-	public String getStringFromMessages(JSONMessageResponse response) {
+	
+	public static String getStringFromMessages(JSONMessageResponse response) {
 		return GSON.toJson(response);
 	}
 

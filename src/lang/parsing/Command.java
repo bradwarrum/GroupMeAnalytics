@@ -21,7 +21,8 @@ public enum Command {
 	RANDOM_WORD("random word"),
 	RANDOM_MSG("random message"),
 	HELP("help"),
-	PING("are you there", "can you hear me", "hello", "you there", "are you ok", "you good");
+	PING("are you there", "can you hear me", "hello", "you there", "are you ok", "you good"),
+	REFRESH("refresh", "fetch", "get new messages", "check for new messages", "update");
 	
 	private final String[] commands;
 	private static TrieNode<TypeIndexPair> commandTree = null;

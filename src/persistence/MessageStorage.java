@@ -10,6 +10,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.Scanner;
 
+import network.groupme.GroupMeRequester;
+import network.models.JSONMessageResponse;
+
 public class MessageStorage{
 	public class Enumerator implements Enumeration<String>{
 		private int fileNum;
@@ -52,8 +55,10 @@ public class MessageStorage{
 
 	}
 	private final static String BASE = "msgdat_";
+	private final static int MIN_MESSAGES_PER_FILE = 450;
 	private final Path directory;
 	private int maxFileNum = -1;
+	private JSONMessageResponse currentResponse = null;
 	public MessageStorage(Path directoryPath) throws IOException {
 		if (!directoryPath.equals(Files.createDirectories(directoryPath))) {
 			throw new IOException("Could not create the directory for message storage.");
@@ -69,21 +74,56 @@ public class MessageStorage{
 				}
 			}
 		}
-		this.directory = directoryPath;
+		this.directory = directoryPath;		
+		if (maxFileNum >= 0) {
+			try (BufferedReader reader = Files.newBufferedReader(directory.resolve(BASE + String.format("%09d", maxFileNum)))) {
+				Scanner scanner = new Scanner(reader);
+				String content = scanner.useDelimiter("\\A").next();
+				scanner.close();
+				currentResponse = GroupMeRequester.getMessagesFromString(content);
+				
+			} catch (IOException e) {
+				System.out.println("Error encountered reading main storage file. Manually remove problem files and restart the program.");
+				System.exit(1);
+			}
+		}
+
 	}
 	public Enumeration<String> getMessageHistory(){
 		return new MessageStorage.Enumerator(this);
 	}
-
-	public boolean saveChunk(String chunk) {
-		Path file = directory.resolve(BASE + String.format("%09d", maxFileNum + 1));
+	
+	private void saveCurrentResponse() {
+		Path file = directory.resolve(BASE + String.format("%09d", maxFileNum));
 		try (BufferedWriter writer = Files.newBufferedWriter(file, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-			writer.write(chunk);
-			maxFileNum++;
+			writer.write(GroupMeRequester.getStringFromMessages(currentResponse));
 		} catch (IOException e) {
-			return false;
+			System.out.println("Error saving messages to file");
+		} finally {
 		}
-		return true;
+	}
+
+	public void saveChunk(JSONMessageResponse response) {
+		if (currentResponse == null) {
+			currentResponse = response;
+			return;
+		}
+		currentResponse.data.messages.addAll(response.data.messages);
+		if (currentResponse.data.messages.size() > MIN_MESSAGES_PER_FILE) {
+			saveCurrentResponse();
+			maxFileNum++;
+			currentResponse = null;
+		}
+
+	}
+	
+	public void commitMessages() {
+		saveCurrentResponse();
+	}
+	
+	public String largestMessageID() {
+		if (currentResponse == null) return "0";
+		return currentResponse.data.messages.get(currentResponse.data.messages.size() - 1).messageID;
 	}
 
 

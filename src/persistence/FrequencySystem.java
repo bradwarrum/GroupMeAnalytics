@@ -28,19 +28,17 @@ public class FrequencySystem {
 		freqTable = new FrequencyTable("./data/freq", "./data/freq.rbjf");
 		msgRefs = new MessageReferenceTable("./data/msgref", "./data/msgref.rbjf");		
 	}
-	
+	private final static String WHITESPACE = "[\\s.,\"()?!*;:# ]";
 	private static String sanitizeInput(String input) {
-		return input.replaceAll("($|^|[\\s.,\"()?!*;:@#]){2,}", " ").trim().toLowerCase();
-	}
-	
-	public static void main(String[] args){
-		System.out.println(sanitizeInput("http://www.google.com  Mr. Bulldops    is the \tbest place. Bro...you gotta try it."));
+		return input.replaceAll(WHITESPACE + "{2,}", " ").replaceAll("^" + WHITESPACE, "").replaceAll(WHITESPACE + "$", "").trim().toLowerCase();
 	}
 	
 	public void processMessage(GMMessage message) throws Exception {
 		if (message.message() == null) return;
 		String[] words = sanitizeInput(message.message()).split(" ");
-		
+		if (message.message().toLowerCase().contains("smoke weed")) {
+			System.out.println("DEBUG");
+		}
 		for (String word : words) {
 			TreePointer wordTreeEntry = wordTree.mapWord(word);
 			if (wordTreeEntry == null) {
@@ -61,6 +59,11 @@ public class FrequencySystem {
 			freqTable.setExternalPointer(freqTableMaster, msgRefHead);
 		}
 	}
+	
+	public int getLargestMessageIDRecorded() throws Exception{
+		return msgRefs.largestMessageID();
+	}
+	
 	public long getTotalWordCount() {
 		return freqTable.getTotalWordCount();
 	}

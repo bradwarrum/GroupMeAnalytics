@@ -15,14 +15,29 @@ public class SynchronizationSystem {
 	private final FrequencySystem freqSystem;
 	private final HistoryDatabase history;
 	private final MessageStorage messageStorage;
-	public SynchronizationSystem(GroupMeRequester gmReq, FrequencySystem freqSystem, MessageStorage messageStorage, HistoryDatabase history) {
+	private boolean maybeDirty = true;
+	public SynchronizationSystem(GroupMeRequester gmReq, FrequencySystem freqSystem, MessageStorage messageStorage, HistoryDatabase history) throws Exception {
 		this.gmReq = gmReq;
 		this.freqSystem = freqSystem;
 		this.history = history;
 		this.messageStorage = messageStorage;
+		
+		String largestHist = history.latestMessageID();
+		String largestStorage = messageStorage.largestMessageID();
+		if (!largestHist.equals(largestStorage)) {
+			System.out.println("Message ID disparity, rebuilding databases");
+			relink();
+		} else {
+			String largestFreq = history.translateToGMID(freqSystem.getLargestMessageIDRecorded());
+			if (!largestHist.equals(largestFreq)) {
+				System.out.println("Message ID disparity, rebuilding databases");
+				relink();
+			}
+		}
 	}
 
 	private String relink() throws Exception {
+		if (!maybeDirty) return messageStorage.largestMessageID();
 		System.out.println("Removing word associations and linkages...");
 		freqSystem.destroy();
 		history.drop();
@@ -49,7 +64,9 @@ public class SynchronizationSystem {
 		}
 		freqSystem.commit();
 		history.commit();
+		messageStorage.commitMessages();
 		System.out.println("Loaded " + totalProcessed + " messages from local storage");
+		maybeDirty = false;
 		return latestMessage;
 	}
 
@@ -87,10 +104,11 @@ public class SynchronizationSystem {
 
 
 	@SuppressWarnings("unused")
-	public void synchronize(boolean relink) throws Exception {
+	public int synchronize(boolean relink) throws Exception {
 		String latestMessage = relink ? relink() : history.latestMessageID();
-		if (!Options.FETCH_NEW) return;		
-		int currMessageCount = history.totalNumMessages();
+		int currMessageCount = history.totalNumMessages();		
+		if (!Options.FETCH_NEW) return 0;		
+		
 		int remaining = -1;
 		int processed = 0;
 		float percentage = 0;
@@ -107,7 +125,7 @@ public class SynchronizationSystem {
 					if (remaining > 0) System.out.println("Percentage : " + String.format("%.2f", (double)processed / remaining * 100.0 ));
 						
 					
-					messageStorage.saveChunk(gmReq.getStringFromMessages(resp));
+					messageStorage.saveChunk(resp);
 					MessageProcessingStats stats = processMessageSet(resp);
 					processed += stats.processed;
 					latestMessage = stats.lastMessageGMID;
@@ -122,7 +140,8 @@ public class SynchronizationSystem {
 		} while (resp != null);
 		freqSystem.commit();
 		history.commit();
-
+		messageStorage.commitMessages();
+		return processed;
 	}
 
 }

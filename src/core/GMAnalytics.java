@@ -11,6 +11,7 @@ import lang.handlers.DefinitionHandler;
 import lang.handlers.FrequencyHandler;
 import lang.handlers.MetadataHandler;
 import lang.handlers.PingHandler;
+import lang.handlers.RefreshHandler;
 import lang.parsing.ChatProcessor;
 import lang.parsing.Command;
 import network.groupme.GroupMeConfig;
@@ -64,8 +65,9 @@ public class GMAnalytics {
 		
 		System.out.println("\nInitializing remote synchronization system...");
 		GroupMeRequester requester = new GroupMeRequester(configuration);
-		SynchronizationSystem syncSys = new SynchronizationSystem(requester,frequencySystem, messageStorage, histdb);
+		SynchronizationSystem syncSys = null;
 		try {
+			syncSys = new SynchronizationSystem(requester,frequencySystem, messageStorage, histdb);
 			syncSys.synchronize(Options.REBUILD_ON_STARTUP);
 		} catch (Exception e) {
 			System.out.println("Synchronization failed");
@@ -80,6 +82,7 @@ public class GMAnalytics {
 		handlerStack.push(new FrequencyHandler(frequencySystem, histdb, requester));
 		handlerStack.push(new DefinitionHandler(requester));
 		handlerStack.push(new PingHandler(requester));
+		handlerStack.push(new RefreshHandler(syncSys, requester));
 		
 		for (CommandHandler handler : handlerStack) {
 			System.out.println("Loading " + handler.getHandlerName());				

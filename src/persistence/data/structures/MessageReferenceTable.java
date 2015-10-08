@@ -110,7 +110,21 @@ public class MessageReferenceTable extends Tree {
 		}
 		return minInd;
 	}
-
+	
+	private int findGlobalMaximum(MRTEntry[] entries) {
+		int maxInd = 0;
+		int maxMessageID = 0;
+		int rawptr = 0;
+		for (int i = 0; i < entries.length; i++) {
+			if ((entries[i].messageID() > maxMessageID) ||
+				(entries[i].messageID() == maxMessageID && entries[i].self().rawValue() > rawptr)) {
+				maxMessageID = entries[i].messageID();
+				maxInd = i;
+				rawptr = entries[i].self().rawValue();
+			}
+		}
+		return maxInd;
+	}
 
 	public GMMessage findSequence(TreePointer[] headPointers, boolean ignoreTrivialMatch) throws Exception {
 		if (headPointers == null || headPointers.length == 0) return null;
@@ -139,12 +153,11 @@ public class MessageReferenceTable extends Tree {
 			cleanup(entries); return null;
 		}
 		int minMessageID = entries[index].messageID();
-		int numMatches = 0;
-
-		do {
-			index = (index + 1) % entries.length;
+		int numMatches = 1;
+		index = (index + 1) % entries.length;
+		while(true) {
 			// Take large jumps at first to save iterations on very frequent words
-			do {
+			while (entries[index].messageID() != minMessageID) {
 				if (entries[index].lookaheadPointer().rawValue() == 0) {break;}
 				MRTEntry lookaheadEntry = getWordEntry(entries[index].lookaheadPointer());
 				if (lookaheadEntry.messageID() >= minMessageID) {
@@ -153,10 +166,13 @@ public class MessageReferenceTable extends Tree {
 				} else {
 					break;
 				}
-			} while(true);
-
+			}
+			
 			do {
-				if (entries[index].messageID() == minMessageID) {numMatches++; break;}
+				if (entries[index].messageID() == minMessageID) {
+					numMatches++;
+					break;
+				}
 				if (entries[index].next().rawValue() == 0) {
 					//This is the only failure case exit point from the loop, occurs when one of the next pointers hits a null.
 					cleanup(entries); 
@@ -166,23 +182,35 @@ public class MessageReferenceTable extends Tree {
 				entries[index].close();
 				entries[index] = nextEntry;
 				if (entries[index].messageID() < minMessageID) {
-					numMatches = 0;
+					numMatches = 1;
 					minMessageID = entries[index].messageID();
+					index = (index + 1) % entries.length;					
 					break;
 				}
-			} while (entries[index].messageID() >= minMessageID);
-
-			if (numMatches == entries.length && checkForSequence(entries)) {
+			} while (entries[index].messageID() >= minMessageID);			
+			
+			if (numMatches >= entries.length && checkForSequence(entries)) {
 				GMMessage message = new GMMessage(null, entries[0].memberID(), entries[0].messageID());
 				for (int i = 0; i < headPointers.length; i++) {
 					headPointers[i] = entries[i].self();
 				}
 				cleanup(entries);
 				return message;
-			} else if (numMatches == entries.length) {
-				FixThis;
+			} else if (numMatches >= entries.length) {
+				index = findGlobalMaximum(entries);
+				MRTEntry highNext = getWordEntry(entries[index].next());
+				entries[index].close();
+				entries[index] = highNext;				
+				if (highNext == null) {cleanup(entries); return null;}
+				if (highNext.messageID() < minMessageID) {
+					minMessageID = highNext.messageID();
+					numMatches = 1;		
+					index = (index + 1) % entries.length;						
+				}
+
+				
 			}
-		} while (true);
+		}
 	}
 
 	public HashMap<Byte, Integer> findFrequencyForSequence(TreePointer[] headPointers) throws Exception {
@@ -192,16 +220,23 @@ public class MessageReferenceTable extends Tree {
 		do {
 			seqOutput = findSequence(headPointers, ignoreTrivial);
 			if (seqOutput != null) {
-				Integer messageID = freqMap.get(seqOutput.memberID());
-				if (messageID == null) {
+				Integer occurrences = freqMap.get(seqOutput.memberID());
+				if (occurrences == null) {
 					freqMap.put(seqOutput.memberID(), 1);
 				} else {
-					freqMap.put(seqOutput.memberID(), messageID + 1);
+					freqMap.put(seqOutput.memberID(), occurrences + 1);
 				}
 			}
 			ignoreTrivial = true;
 		} while (seqOutput != null);
 		return freqMap;
+	}
+	
+	public int largestMessageID() throws Exception {
+		MRTEntry entry = getWordEntry(new TreePointer(header.pageCount() - 1, header.finalPageEntryCount() - 1, ENTRIES_PER_PAGE));
+		int messageID = entry.messageID();
+		entry.close();
+		return messageID;
 	}
 
 }
