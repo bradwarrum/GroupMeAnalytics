@@ -230,6 +230,7 @@ public class MessageReferenceTable extends Tree {
 	
 	public int largestMessageID() throws Exception {
 		MRTEntry entry = getWordEntry(new TreePointer(header.pageCount() - 1, header.finalPageEntryCount() - 1, ENTRIES_PER_PAGE));
+		if (entry == null) return 0;
 		int messageID = entry.messageID();
 		entry.close();
 		return messageID;
