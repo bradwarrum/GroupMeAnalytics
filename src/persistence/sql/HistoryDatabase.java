@@ -8,8 +8,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
-import com.sun.corba.se.spi.orbutil.fsm.State;
-
 import core.DateUtils;
 import network.models.FTLMessage;
 import network.models.FTLMessages;

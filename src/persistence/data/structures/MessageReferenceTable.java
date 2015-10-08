@@ -1,11 +1,7 @@
 package persistence.data.structures;
 import java.util.HashMap;
-import java.util.List;
-
-import com.sun.xml.internal.fastinfoset.util.FixedEntryStringIntMap;
 
 import core.Options;
-import jdk.nashorn.internal.runtime.FindProperty;
 import persistence.GMMessage;
 import persistence.caching.PageEntry;
 import persistence.data.models.MRTEntry;
