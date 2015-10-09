@@ -13,7 +13,10 @@ public class PageReference {
 
 	public void decrementRefCount() {
 		refCount--;
-		if (refCount < 0) throw new IllegalStateException();
+		if (refCount < 0) {
+			System.out.println("Bad free");
+			throw new IllegalStateException();
+		}
 	}
 
 	public boolean isReferenced() {

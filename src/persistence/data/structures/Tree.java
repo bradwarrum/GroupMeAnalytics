@@ -67,7 +67,7 @@ public abstract class Tree {
 	
 	protected final PageEntry getEntry(int pageID, int entryIndex) throws Exception {
 		if (pageID == 0 && entryIndex == 0) return null;
-		if (pageID < header.pageCount() || (pageID == header.pageCount() && entryIndex < header.finalPageEntryCount())) {
+		if (pageID < header.pageCount() - 1 || (pageID == header.pageCount() - 1 && entryIndex < header.finalPageEntryCount())) {
 			return pageCache.entryAt(pageID, entryIndex);
 		}
 		throw new IllegalArgumentException("Entry does not exist in the tree");

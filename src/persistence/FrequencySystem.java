@@ -1,8 +1,5 @@
 package persistence;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 
 import persistence.data.structures.FrequencyTable;
 import persistence.data.structures.MessageReferenceTable;
@@ -16,7 +13,7 @@ public class FrequencySystem {
 	
 	public FrequencySystem() throws Exception {
 		wordTree = new WordTree("./data/words", "./data/words.rbjf");
-		freqTable = new FrequencyTable("./data/freq", "./data/freq.rbjf");
+		freqTable = new FrequencyTable("./data/freq", "./data/freq.rbjf");	
 		msgRefs = new MessageReferenceTable("./data/msgref", "./data/msgref.rbjf");
 	}
 	
@@ -36,9 +33,6 @@ public class FrequencySystem {
 	public void processMessage(GMMessage message) throws Exception {
 		if (message.message() == null) return;
 		String[] words = sanitizeInput(message.message()).split(" ");
-		if (message.message().toLowerCase().contains("smoke weed")) {
-			System.out.println("DEBUG");
-		}
 		for (String word : words) {
 			TreePointer wordTreeEntry = wordTree.mapWord(word);
 			if (wordTreeEntry == null) {

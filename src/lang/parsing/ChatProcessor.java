@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import lang.handlers.CommandHandler;
 import network.models.JSONMessageResponse.Message;
+import persistence.caching.PageEntry;
 
 public class ChatProcessor {
 	private final String BOT_NAME;
@@ -29,7 +30,7 @@ public class ChatProcessor {
 			int commandLength = ctype.lengthOfCommandAt(tip.wordIndex);
 			String remainder = (commandLength>= nameBody[1].length() - 1) ? null : nameBody[1].substring(commandLength + 1);
 			CommandHandler handler = handlers.get(ctype);
-			if (handler != null) handler.process(ctype, message.senderID, remainder);
+			if (handler != null) handler.process(ctype, message.senderID, remainder);		
 			return ctype;
 		}
 		return null;

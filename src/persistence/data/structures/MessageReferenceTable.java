@@ -151,7 +151,7 @@ public class MessageReferenceTable extends Tree {
 		int minMessageID = entries[index].messageID();
 		int numMatches = 1;
 		index = (index + 1) % entries.length;
-		while(true) {
+		while(true) {	
 			// Take large jumps at first to save iterations on very frequent words
 			while (entries[index].messageID() != minMessageID) {
 				if (entries[index].lookaheadPointer().rawValue() == 0) {break;}
@@ -160,6 +160,7 @@ public class MessageReferenceTable extends Tree {
 					entries[index].close();
 					entries[index] = lookaheadEntry;
 				} else {
+					lookaheadEntry.close();
 					break;
 				}
 			}
@@ -183,7 +184,7 @@ public class MessageReferenceTable extends Tree {
 					index = (index + 1) % entries.length;					
 					break;
 				}
-			} while (entries[index].messageID() >= minMessageID);			
+			} while (entries[index].messageID() >= minMessageID);
 			
 			if (numMatches >= entries.length && checkForSequence(entries)) {
 				GMMessage message = new GMMessage(null, entries[0].memberID(), entries[0].messageID());
