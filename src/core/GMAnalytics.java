@@ -9,6 +9,7 @@ import java.util.Stack;
 import lang.handlers.CommandHandler;
 import lang.handlers.DefinitionHandler;
 import lang.handlers.FrequencyHandler;
+import lang.handlers.HelpHandler;
 import lang.handlers.MetadataHandler;
 import lang.handlers.PingHandler;
 import lang.handlers.RefreshHandler;
@@ -83,6 +84,7 @@ public class GMAnalytics {
 		handlerStack.push(new DefinitionHandler(requester));
 		handlerStack.push(new PingHandler(requester));
 		handlerStack.push(new RefreshHandler(syncSys, requester));
+		handlerStack.push(new HelpHandler(requester));
 		
 		for (CommandHandler handler : handlerStack) {
 			System.out.println("Loading " + handler.getHandlerName());				
