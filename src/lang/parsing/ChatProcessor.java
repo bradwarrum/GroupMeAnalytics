@@ -22,6 +22,7 @@ public class ChatProcessor {
 			return null;
 		String msg = sanitizeInput(message.text);
 		String[] nameBody = msg.split(" ", 2);
+		if (nameBody.length < 2) return null;
 		if (!nameBody[0].equals(BOT_NAME)) return null;
 		byte[] bodyASCII = nameBody[1].getBytes("US-ASCII");
 		Command.TypeIndexPair tip = Command.fromByteArray(bodyASCII);
