@@ -57,7 +57,7 @@ public class MessageStorage{
 	private final static String BASE = "msgdat_";
 	private final static int MIN_MESSAGES_PER_FILE = 450;
 	private final Path directory;
-	private int maxFileNum = -1;
+	private int maxFileNum = 0;
 	private JSONMessageResponse currentResponse = null;
 	public MessageStorage(Path directoryPath) throws IOException {
 		if (!directoryPath.equals(Files.createDirectories(directoryPath))) {
