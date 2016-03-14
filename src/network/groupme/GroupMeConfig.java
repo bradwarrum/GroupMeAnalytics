@@ -12,11 +12,13 @@ public class GroupMeConfig {
 	public final String groupID;
 	public final String accessToken;
 	public final String botName;
-	private GroupMeConfig(String botID, String groupID, String accessToken, String botName) {
+	public final int hostPort;
+	private GroupMeConfig(String botID, String groupID, String accessToken, String botName, int hostPort) {
 		this.botID = botID;
 		this.groupID = groupID;
 		this.accessToken = accessToken;
 		this.botName = botName;
+		this.hostPort = hostPort;
 	}
 
 	public static GroupMeConfig fromConfigFile(File configFile) throws IOException {
@@ -25,6 +27,7 @@ public class GroupMeConfig {
 		BufferedReader reader = new BufferedReader(isr);
 		String line;
 		String botID = null, groupID = null, accessToken = null, botName = null;
+		int hostPort = 56789;
 		while ((line = reader.readLine()) != null) {
 			String[] kvp = line.trim().split(":");
 			switch (kvp[0]) {
@@ -39,9 +42,16 @@ public class GroupMeConfig {
 				break;
 			case "BOT_NAME":
 				botName = kvp[1];
+				break;
+			case "HOST_PORT":
+				try {
+					hostPort = Integer.parseInt(kvp[1]);
+				} catch (NumberFormatException e) {
+				}
+				break;
 			}
 		}
 		if (botID == null || groupID == null || accessToken == null || botName == null || botName.contains(" ")) throw new IOException("Malformed GroupMe configuration file");
-		return new GroupMeConfig(botID, groupID, accessToken, botName);
+		return new GroupMeConfig(botID, groupID, accessToken, botName, hostPort);
 	}
 }

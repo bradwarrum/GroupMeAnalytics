@@ -14,6 +14,8 @@ public class JSONMessageResponse {
 			public String url;
 			
 		}
+		@SerializedName("group_id")
+		public String groupID;
 		@SerializedName("created_at")
 		public long timestamp;
 		@SerializedName("id")
