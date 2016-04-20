@@ -1,0 +1,1 @@
+nohup java -Xmx64m -cp "bin/:lib/*" core.GMAnalytics > ./logs/1.log 2>&1 & echo $! > .pid
