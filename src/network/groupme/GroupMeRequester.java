@@ -16,7 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import core.Options;
-import javafx.util.Pair;
+import core.Pair;
 import network.models.JSONBotMessage;
 import network.models.JSONMessageResponse;
 import network.models.JSONUrbanResponse;

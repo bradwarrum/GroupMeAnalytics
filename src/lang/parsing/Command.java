@@ -2,8 +2,6 @@ package lang.parsing;
 
 import java.io.UnsupportedEncodingException;
 
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_OVERLAYPeer;
-
 public enum Command {
 	TOTAL_MESSAGES("message count", "count all messages", "total message count"),
 	WRDCT_UNIQUE("count unique words", "count all unique words", "unique word count", "unique wordcount"),
