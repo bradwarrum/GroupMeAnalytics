@@ -12,26 +12,14 @@ public class ChatMessageQueue {
 		messageQueue = new ArrayBlockingQueue<JSONMessageResponse.Message>(16);
 	}
 	
-	public synchronized Message tryDequeue() {
-		while (true)
-		try {
-			wait();
-			break;
-		} catch (InterruptedException e) {
-			continue;
-		}
+	public Message tryDequeue() {
 		return messageQueue.poll();
 	}
 	
-	public synchronized void tryEnqueue(String rawMessage) {
+	public void tryEnqueue(String rawMessage) {
 		JSONMessageResponse.Message message = GroupMeRequester.getMessageFromString(rawMessage);
 		if (message != null) {
 			messageQueue.offer(message);
-			notify();
 		}
-	}
-	
-	public void interrupt() {
-		notifyAll();
 	}
 }
